@@ -129,6 +129,8 @@ Functionally at full parity with train-db-frontend:
 - Theme colors matched exactly to web's `globals.css` (blue primary, orange CTA accent)
 - Admin Portal: stats, Dataset Health, Clear Cache, **Run Import** (confirm → trigger `POST /admin/import` → success/failure result with rows imported/failed, stats refresh on success), Forget key — full parity with web's AdminDashboard
 
+**2026-07-30 build verification:** the app has now actually been installed and type-checked (`npm install` + `npx tsc --noEmit`), not just hand-reviewed. That surfaced a few real issues, all fixed: `@testing-library/react-native@^13.4.0` didn't exist as a published version; `@hookform/resolvers@^3.10.0` predates zod v4's API with no declared peer dep to catch it, bumped to `^5.4.1`; `react-native-vector-icons` ships no bundled types, added `@types/react-native-vector-icons`; `src/lib/jwt.ts` relied on `global.atob`/`Buffer`, neither reliably present/typed in bare Hermes - replaced with a dependency-free base64 decoder; `navigationRef.ts` needed an explicit `<any>` generic for the Assistant's cross-tab navigation calls to type-check. `tsc --noEmit` now passes clean. This repo is now a git repository with everything committed.
+
 ## Audit history
 
 Two audit passes have been done on this app so far (2026-07-30); every
