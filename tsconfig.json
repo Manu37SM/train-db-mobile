@@ -1,9 +1,21 @@
 {
   "extends": "@react-native/typescript-config",
   "compilerOptions": {
-    "baseUrl": ".",
+    // "./src/*" (relative, leading "./") rather than bare "src/*" - once
+    // baseUrl isn't explicitly set in *this* file, "paths" entries need to
+    // be relative to resolve correctly (TS5090). Resolves to the same
+    // place either way.
+    //
+    // A "baseUrl is deprecated" notice may still show in the editor -
+    // that's inherited from @react-native/typescript-config (the "extends"
+    // base below), which isn't ours to edit. Tried silencing it with
+    // ignoreDeprecations, but the accepted value differs by installed
+    // TypeScript version and got it wrong once already, turning a cosmetic
+    // IDE-only nag into a real compile error - not worth guessing again.
+    // `npx tsc --noEmit` passes clean regardless; safe to ignore in the
+    // editor until @react-native/typescript-config itself updates.
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": ["src", "App.tsx", "index.js"]
