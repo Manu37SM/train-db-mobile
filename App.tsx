@@ -7,6 +7,7 @@ import { queryClient } from '@/api/queryClient';
 import { lightTheme, darkTheme } from '@/theme/theme';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import RootNavigator from '@/navigation/RootNavigator';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function App() {
   const systemScheme = useColorScheme();
@@ -19,7 +20,9 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <SafeAreaProvider>
         <PaperProvider theme={theme}>
-          <RootNavigator />
+          <ErrorBoundary>
+            <RootNavigator />
+          </ErrorBoundary>
         </PaperProvider>
       </SafeAreaProvider>
     </QueryClientProvider>
