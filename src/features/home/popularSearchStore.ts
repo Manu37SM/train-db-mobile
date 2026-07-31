@@ -30,6 +30,11 @@ interface PopularSearchState extends PopularSearchShape {
 
 const initial: PopularSearchShape = getJSON<PopularSearchShape>(STORAGE_KEY) ?? { trains: {}, stations: {} };
 
+// Keyed by free-text query rather than a bounded ID space, so this can
+// otherwise grow without limit as a user types more distinct queries over
+// time - same unbounded-MMKV-growth risk as popularityStore.ts, same fix.
+const MAX_ENTRIES_PER_BUCKET = 200;
+
 function persist(state: PopularSearchShape) {
   setJSON(STORAGE_KEY, state);
 }
@@ -43,10 +48,26 @@ function recordInto(
   if (query.length < MIN_QUERY_LENGTH) return null;
 
   const existing = bucket[query];
-  return {
-    ...bucket,
-    [query]: { query, displayQuery: existing?.displayQuery ?? displayQuery, count: (existing?.count ?? 0) + 1 },
-  };
+  const nextBucket = { ...bucket };
+
+  if (!existing && Object.keys(nextBucket).length >= MAX_ENTRIES_PER_BUCKET) {
+    let leastSearchedQuery: string | null = null;
+    let leastCount = Infinity;
+
+    for (const entry of Object.values(nextBucket)) {
+      if (entry.count < leastCount) {
+        leastCount = entry.count;
+        leastSearchedQuery = entry.query;
+      }
+    }
+
+    if (leastSearchedQuery) {
+      delete nextBucket[leastSearchedQuery];
+    }
+  }
+
+  nextBucket[query] = { query, displayQuery: existing?.displayQuery ?? displayQuery, count: (existing?.count ?? 0) + 1 };
+  return nextBucket;
 }
 
 export const usePopularSearchStore = create<PopularSearchState>((set, get) => ({

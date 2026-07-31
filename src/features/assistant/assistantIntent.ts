@@ -38,6 +38,16 @@ export type AssistantAction =
   | { type: 'trains' }
   | { type: 'stations' }
   | { type: 'journeys' }
+  | { type: 'rankings' }
+  | { type: 'funFacts' }
+  | { type: 'achievements' }
+  | { type: 'network' }
+  | { type: 'stats' }
+  | { type: 'smartSearch' }
+  | { type: 'admin' }
+  | { type: 'account' }
+  | { type: 'developers' }
+  | { type: 'savedJourneys' }
   | { type: 'unknown'; query: string };
 
 export interface AssistantResponse {
@@ -77,6 +87,23 @@ export function resolveIntent(query: string): AssistantAction {
   if (/favorite/i.test(input)) return { type: 'favorites' };
   if (/recent/i.test(input)) return { type: 'recent' };
   if (/help|what can you do/i.test(input)) return { type: 'help' };
+
+  // "Railway Intelligence" feature set (added after the original five
+  // intents above) - see FEATURE.md. Multi-word/longer phrases only,
+  // deliberately, so a bare short word (e.g. "stats", "admin") still
+  // falls through to the 2-5 letter station-code match above, same
+  // pre-existing trade-off "help" already has with that regex.
+  if (/rank/i.test(input)) return { type: 'rankings' };
+  if (/fun fact|fun stat|funfact/i.test(input)) return { type: 'funFacts' };
+  if (/achievement/i.test(input)) return { type: 'achievements' };
+  if (/railway network|network stats|network graph|\bnetwork\b/i.test(input)) return { type: 'network' };
+  if (/statistic|dataset health|\bstats\b/i.test(input)) return { type: 'stats' };
+  if (/smart search/i.test(input)) return { type: 'smartSearch' };
+  if (/\badmin\b/i.test(input)) return { type: 'admin' };
+  if (/\baccount\b|preferences|my profile/i.test(input)) return { type: 'account' };
+  if (/developer/i.test(input)) return { type: 'developers' };
+  if (/saved journey/i.test(input)) return { type: 'savedJourneys' };
+
   if (/search.*train|find.*train|train search/i.test(input)) return { type: 'unknown', query: 'help:trains' };
   if (/station search|search.*station|find.*station/i.test(input)) return { type: 'unknown', query: 'help:stations' };
   if (/journey|plan.*trip|plan.*journey/i.test(input)) return { type: 'unknown', query: 'help:journey' };
@@ -105,6 +132,26 @@ export function buildAssistantResponse(
       return { message: 'Opening Station Search...', closeAfterAction: true };
     case 'journeys':
       return { message: 'Opening Journey Search...', closeAfterAction: true };
+    case 'rankings':
+      return { message: 'Opening Rankings...', closeAfterAction: true };
+    case 'funFacts':
+      return { message: 'Opening Fun Facts...', closeAfterAction: true };
+    case 'achievements':
+      return { message: 'Opening Achievements...', closeAfterAction: true };
+    case 'network':
+      return { message: 'Opening Railway Network...', closeAfterAction: true };
+    case 'stats':
+      return { message: 'Opening Statistics...', closeAfterAction: true };
+    case 'smartSearch':
+      return { message: 'Opening Smart Search...', closeAfterAction: true };
+    case 'admin':
+      return { message: 'Opening Admin Portal...', closeAfterAction: true };
+    case 'account':
+      return { message: 'Opening Account...', closeAfterAction: true };
+    case 'developers':
+      return { message: 'Opening Developers...', closeAfterAction: true };
+    case 'savedJourneys':
+      return { message: 'Opening Saved Journeys...', closeAfterAction: true };
 
     case 'favorites':
       return {
@@ -149,7 +196,10 @@ export function buildAssistantResponse(
           '• Search stations\n' +
           '• Plan journeys\n' +
           '• View favorites\n' +
-          '• View recent searches\n\n' +
+          '• View recent searches\n' +
+          '• Rankings, Fun Facts, Achievements\n' +
+          '• Railway Network, Statistics\n' +
+          '• Smart Search, Saved Journeys\n\n' +
           'You can also ask:\n"How do I search trains?"',
       };
 

@@ -112,6 +112,36 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
       case 'journeys':
         navigationRef.navigate('JourneysTab', { screen: 'JourneySearch' } as never);
         return true;
+      case 'rankings':
+        navigationRef.navigate('ExploreTab', { screen: 'Rankings' } as never);
+        return true;
+      case 'funFacts':
+        navigationRef.navigate('ExploreTab', { screen: 'FunFacts' } as never);
+        return true;
+      case 'achievements':
+        navigationRef.navigate('ExploreTab', { screen: 'Achievements' } as never);
+        return true;
+      case 'network':
+        navigationRef.navigate('ExploreTab', { screen: 'Network' } as never);
+        return true;
+      case 'stats':
+        navigationRef.navigate('ExploreTab', { screen: 'Stats' } as never);
+        return true;
+      case 'smartSearch':
+        navigationRef.navigate('ExploreTab', { screen: 'SmartSearch' } as never);
+        return true;
+      case 'admin':
+        navigationRef.navigate('AccountTab', { screen: 'Admin' } as never);
+        return true;
+      case 'account':
+        navigationRef.navigate('AccountTab', { screen: 'Account' } as never);
+        return true;
+      case 'developers':
+        navigationRef.navigate('AccountTab', { screen: 'Developers' } as never);
+        return true;
+      case 'savedJourneys':
+        navigationRef.navigate('JourneysTab', { screen: 'SavedJourneys' } as never);
+        return true;
       default:
         return false;
     }

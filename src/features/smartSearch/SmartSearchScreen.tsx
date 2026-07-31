@@ -13,6 +13,14 @@ import { smartSearch } from './api';
  * backend's SmartSearchResponse (not `query`/`interpretation`, an earlier
  * pass here guessed those field names wrong).
  */
+// Defensive cap, same reasoning as AchievementsScreen's PREVIEW_COUNT and
+// web's SmartSearchClient: the backend already limits this, but a loosely-
+// matching query ("trains longer than 20 hours") is exactly the kind of
+// thing that could return a large slice of the ~14,000-train dataset.
+// Rendering that unbounded into a ScrollView on a phone (much less headroom
+// than a desktop browser tab) is worth guarding against directly.
+const PREVIEW_COUNT = 50;
+
 export default function SmartSearchScreen() {
   const navigation = useNavigation<any>();
   const [input, setInput] = useState('');
@@ -53,7 +61,7 @@ export default function SmartSearchScreen() {
           <Text style={styles.matchCount}>
             {data.matchCount} match{data.matchCount === 1 ? '' : 'es'}
           </Text>
-          {data.trains.map((t) => (
+          {data.trains.slice(0, PREVIEW_COUNT).map((t) => (
             <List.Item
               key={t.trainNumber}
               title={t.trainNumber}
@@ -61,6 +69,11 @@ export default function SmartSearchScreen() {
               onPress={() => navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber: t.trainNumber } })}
             />
           ))}
+          {data.trains.length > PREVIEW_COUNT && (
+            <Text style={styles.matchCount}>
+              Showing {PREVIEW_COUNT} of {data.trains.length}. Try a more specific query to narrow this down.
+            </Text>
+          )}
         </View>
       )}
     </ScrollView>

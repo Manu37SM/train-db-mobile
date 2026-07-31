@@ -57,17 +57,22 @@ Xcode installed per the [React Native environment setup guide](https://reactnati
 # scratch folder, then copy its native folders into this project.
 npx @react-native-community/cli init TrainDbMobileScratch --version 0.82.0 --skip-install
 cp -R TrainDbMobileScratch/android train-db-mobile/android
-cp -R TrainDbMobileScratch/ios train-db-mobile/ios
 rm -rf TrainDbMobileScratch
 
 cd train-db-mobile
 npm install
-cd ios && pod install && cd ..   # iOS only
 ```
 
-After that, treat `android/` and `ios/` as normal generated native projects
-(rename the app display name / bundle id there to match `app.json` if you
-want them fully aligned — not required to run).
+Only the `android/` folder is copied over — **iOS is deliberately skipped**
+for this project (demo-only, not worth the $99/year Apple Developer
+Program fee; Apple doesn't allow free sideloading beyond your own device).
+If that ever changes, `TrainDbMobileScratch/ios` from the same scratch
+template above can still be copied in later — nothing about the app code
+depends on iOS being skipped.
+
+After that, treat `android/` as a normal generated native project (rename
+the app display name / package id there to match `app.json` if you want it
+fully aligned — not required to run).
 
 ## Deploying the backend (do this first)
 
@@ -91,25 +96,46 @@ mobile app bug, if a first launch feels slow.
 
 `src/config/env.ts` is the single source of truth for the API base URL —
 see step 6 above. Flip `USE_LOCAL_BACKEND` to `true` there only when you
-want an emulator/simulator talking to a `train-db` running on your own
-machine instead of the live deployment (Android emulator reaches the host
-via `10.0.2.2`; iOS simulator uses `localhost` directly). `.env.example`
-documents the same values for when react-native-config gets wired up later
-(deliberately deferred for now).
+want an emulator talking to a `train-db` running on your own machine
+instead of the live deployment (Android emulator reaches the host via
+`10.0.2.2`). `.env.example` documents the same values for when
+react-native-config gets wired up later (deliberately deferred for now).
 
-## Running on your own phone
+## Running on your own phone (Android)
 
 1. Complete the native-folder bootstrap above once.
-2. Connect your phone via USB (Android: enable Developer Options → USB debugging; iOS: trust the computer, and you'll need it registered in Xcode's signing for a debug build - free Apple ID works for a 7-day-renewable local dev build, no paid Developer Program needed for this).
-3. Confirm the device is detected: `adb devices` (Android) or it shows up in Xcode's device list (iOS).
+2. Connect your phone via USB and enable Developer Options → USB debugging.
+3. Confirm the device is detected: `adb devices`.
 4. With `LIVE_BASE_URL` pointed at your deployed Render backend (see above):
    ```bash
    npm install
    npm run android   # installs and launches on the connected Android device
-   # or
-   npm run ios       # installs and launches on the connected iOS device
    ```
 5. The app now talks to the real backend over the internet, not your dev machine — works over wifi/cellular, no port-forwarding or same-network requirement.
+
+## Sharing the app as a demo (no Play Store needed)
+
+For a demo-only project, a Play Store listing isn't worth the $25 fee.
+Instead, build a release APK and share the file directly:
+
+```bash
+cd android && ./gradlew assembleRelease
+```
+
+The output `.apk` (under `android/app/build/outputs/apk/release/`) can be
+shared via any file link (Drive, email, etc.). The person installing it
+just needs to enable "install from unknown sources" once on their phone —
+no developer account, no store review, no cost.
+
+## iOS — intentionally not built
+
+This project skips iOS. Reasoning: a free Apple ID can only run a build on
+your own registered device (7-day-renewable, via Xcode), and cannot be
+shared with anyone else's phone — actual distribution (TestFlight or the
+App Store) requires the $99/year Apple Developer Program. For a demo
+project this isn't worth it. The app itself has no iOS-specific blocker if
+that decision changes later — see the native-folder bootstrap section
+above.
 
 ## Status
 

@@ -29,23 +29,57 @@ interface PopularityState extends PopularityShape {
 
 const initial: PopularityShape = getJSON<PopularityShape>(STORAGE_KEY) ?? { trains: {}, stations: {} };
 
+// Without a cap, a long-lived user browsing widely across the ~14,000-train/
+// several-thousand-station catalog over months would grow this map roughly
+// proportional to the dataset itself - unbounded MMKV growth plus an
+// ever-growing full-object JSON.stringify + write on every single view (see
+// persist() below). 200 is generous headroom over what's ever displayed
+// (top 5/10), so this never affects normal usage.
+const MAX_ENTRIES_PER_BUCKET = 200;
+
 function persist(state: PopularityShape) {
   setJSON(STORAGE_KEY, state);
+}
+
+function recordEntry(
+  bucket: Record<string, PopularityEntry>,
+  code: string,
+  name: string,
+): Record<string, PopularityEntry> {
+  const existing = bucket[code];
+  const nextBucket = { ...bucket };
+
+  if (!existing && Object.keys(nextBucket).length >= MAX_ENTRIES_PER_BUCKET) {
+    let leastViewedCode: string | null = null;
+    let leastViews = Infinity;
+
+    for (const entry of Object.values(nextBucket)) {
+      if (entry.views < leastViews) {
+        leastViews = entry.views;
+        leastViewedCode = entry.code;
+      }
+    }
+
+    if (leastViewedCode) {
+      delete nextBucket[leastViewedCode];
+    }
+  }
+
+  nextBucket[code] = { code, name, views: (existing?.views ?? 0) + 1 };
+  return nextBucket;
 }
 
 export const usePopularityStore = create<PopularityState>((set, get) => ({
   ...initial,
 
   recordTrainView: (code, name) => {
-    const existing = get().trains[code];
-    const trains = { ...get().trains, [code]: { code, name, views: (existing?.views ?? 0) + 1 } };
+    const trains = recordEntry(get().trains, code, name);
     persist({ ...get(), trains });
     set({ trains });
   },
 
   recordStationView: (code, name) => {
-    const existing = get().stations[code];
-    const stations = { ...get().stations, [code]: { code, name, views: (existing?.views ?? 0) + 1 } };
+    const stations = recordEntry(get().stations, code, name);
     persist({ ...get(), stations });
     set({ stations });
   },
