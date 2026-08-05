@@ -101,7 +101,11 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
         );
         return true;
       case 'home':
-        navigationRef.navigate('HomeTab' as never);
+        // Explicit `undefined` second argument, matching every other call
+        // in this function - a bare single-argument call resolves to
+        // `navigate`'s deprecated options-object overload instead of the
+        // (name, params) form.
+        navigationRef.navigate('HomeTab', undefined as never);
         return true;
       case 'trains':
         navigationRef.navigate('TrainsTab', { screen: 'TrainSearch' } as never);

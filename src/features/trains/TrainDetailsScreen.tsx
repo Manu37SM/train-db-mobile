@@ -8,7 +8,6 @@ import { useFavoritesStore } from '@/features/favorites/store';
 import { usePopularityStore } from '@/features/home/popularityStore';
 import { useSavedJourneysStore } from '@/features/savedJourneys/store';
 import { computePartialJourney, formatPartialDuration } from '@/lib/partialJourney';
-import { BRAND } from '@/theme/theme';
 import type { RouteStopResponse } from '@/types/api';
 import type { TrainsStackParamList } from '@/navigation/types';
 
