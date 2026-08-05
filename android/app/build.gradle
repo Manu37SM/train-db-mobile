@@ -2,6 +2,14 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: "com.facebook.react"
 
+// react-native-vector-icons (MaterialCommunityIcons, used app-wide and by
+// react-native-paper's `icon` props) needs its .ttf font files copied into
+// android/app/src/main/assets/fonts - autolinking above only wires up the
+// native module code, not these font assets. Without this line the fonts
+// never reach the APK, so every icon falls back to the "missing glyph"
+// tofu-box outline - reported 2026-08-05 from device screenshots.
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
 /**
  * This is the configuration block to customize your React Native Android app.
  * By default you don't need to apply any configuration, just uncomment the lines you need.

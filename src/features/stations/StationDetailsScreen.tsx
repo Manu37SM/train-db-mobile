@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { ActivityIndicator, Card, Chip, IconButton, List, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { getStation, getStationIntelligence } from './api';
 import { useFavoritesStore } from '@/features/favorites/store';
@@ -23,6 +24,11 @@ type Filter = 'all' | 'originating' | 'terminating' | 'passing';
 export default function StationDetailsScreen({ route }: Props) {
   const { stationCode } = route.params;
   const favorites = useFavoritesStore();
+  // Typed as `any`, matching the same cross-tab-navigate convention used by
+  // FavoritesScreen/JourneySearchScreen/HistoryScreen: this screen's own
+  // typed `navigation` prop only knows StationsStackParamList and can't
+  // type-check a navigate into the Trains tab's stack.
+  const navigation = useNavigation<any>();
   const isFavorite = favorites.stations.includes(stationCode);
   const recordStationView = usePopularityStore((s) => s.recordStationView);
   const [filter, setFilter] = useState<Filter>('all');
@@ -136,6 +142,12 @@ export default function StationDetailsScreen({ route }: Props) {
                 key={t.trainNumber}
                 title={`${t.trainNumber} · ${t.trainName}`}
                 description={`Arr ${t.arrivalTime ?? '—'} · Dep ${t.departureTime ?? '—'}${t.origin ? ' · Originates here' : ''}${t.destination ? ' · Terminates here' : ''}`}
+                onPress={() =>
+                  navigation.navigate('TrainsTab', {
+                    screen: 'TrainDetails',
+                    params: { trainNumber: t.trainNumber },
+                  })
+                }
               />
             ))
           )}

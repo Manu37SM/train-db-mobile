@@ -1,19 +1,15 @@
 import React from 'react';
-import { useColorScheme } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient } from '@/api/queryClient';
 import { lightTheme, darkTheme } from '@/theme/theme';
-import { usePreferencesStore } from '@/store/preferencesStore';
+import { useResolvedTheme } from '@/theme/useResolvedTheme';
 import RootNavigator from '@/navigation/RootNavigator';
 import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function App() {
-  const systemScheme = useColorScheme();
-  const themePreference = usePreferencesStore((s) => s.theme);
-
-  const resolvedScheme = themePreference === 'system' ? systemScheme : themePreference;
+  const resolvedScheme = useResolvedTheme();
   const theme = resolvedScheme === 'dark' ? darkTheme : lightTheme;
 
   return (
