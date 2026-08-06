@@ -1,6 +1,6 @@
 import React from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, List, Text } from 'react-native-paper';
+import { ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Card, List } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { getAchievements } from './api';
@@ -95,20 +95,18 @@ export default function AchievementsScreen() {
   );
 }
 
+// Same fix as RankingsScreen's Section - see that file's comment.
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={styles.section}>
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {title}
-      </Text>
-      {children}
-    </View>
+    <Card style={styles.section}>
+      <Card.Title title={title} titleNumberOfLines={2} />
+      <Card.Content>{children}</Card.Content>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 20 },
+  content: { padding: 16, gap: 16 },
   section: { gap: 4 },
-  sectionTitle: { marginBottom: 4 },
   loader: { marginTop: 40 },
 });

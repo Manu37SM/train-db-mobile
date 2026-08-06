@@ -3,6 +3,7 @@ import { ActivityIndicator, View } from 'react-native';
 import { NavigationContainer, DefaultTheme as NavigationLightTheme, DarkTheme as NavigationDarkTheme } from '@react-navigation/native';
 import { useAuthStore } from '@/store/authStore';
 import { AssistantFab } from '@/features/assistant/AssistantFab';
+import GlobalToast from '@/components/GlobalToast';
 import { useResolvedTheme } from '@/theme/useResolvedTheme';
 import { lightTheme, darkTheme } from '@/theme/theme';
 import MainTabNavigator from './MainTabNavigator';
@@ -62,6 +63,7 @@ export default function RootNavigator() {
           every tab - mirrors web's AssistantFab being fixed-positioned
           across the whole app rather than living on one page. */}
       <AssistantFab />
+      <GlobalToast />
     </View>
   );
 }

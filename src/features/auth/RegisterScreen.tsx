@@ -7,12 +7,28 @@ import { useMutation } from '@tanstack/react-query';
 import { register as registerRequest } from './api';
 import { registerSchema, RegisterFormValues } from './schemas';
 import { useAuthStore } from '@/store/authStore';
+import { useToastStore } from '@/store/toastStore';
 import { BRAND } from '@/theme/theme';
 import type { AuthNavigation } from '@/navigation/types';
 
 interface Props {
   navigation: AuthNavigation;
 }
+
+// Per-field autofill hints - see LoginScreen's comment on the same fix for
+// why these matter on Android beyond just iOS convenience (a field with no
+// autofill hint at all is exactly what let Samsung Keyboard's own inline
+// suggestion strip race the IME's composing span and duplicate a character,
+// reported 2026-08-06 on the login screen's equivalent field).
+const AUTOFILL: Record<
+  'username' | 'email' | 'password' | 'confirmPassword',
+  { textContentType: React.ComponentProps<typeof TextInput>['textContentType']; autoComplete: React.ComponentProps<typeof TextInput>['autoComplete']; keyboardType?: React.ComponentProps<typeof TextInput>['keyboardType'] }
+> = {
+  username: { textContentType: 'username', autoComplete: 'username' },
+  email: { textContentType: 'emailAddress', autoComplete: 'email', keyboardType: 'email-address' },
+  password: { textContentType: 'newPassword', autoComplete: 'password-new' },
+  confirmPassword: { textContentType: 'newPassword', autoComplete: 'password-new' },
+};
 
 export default function RegisterScreen({ navigation }: Props) {
   const setSession = useAuthStore((s) => s.setSession);
@@ -27,7 +43,14 @@ export default function RegisterScreen({ navigation }: Props) {
   const mutation = useMutation({
     mutationFn: (values: RegisterFormValues) =>
       registerRequest(values.username, values.email, values.password),
-    onSuccess: (data) => setSession(data),
+    // Same fix as LoginScreen's onSuccess - registration also logs the
+    // user straight in (setSession), so it had the identical "nothing
+    // visibly happens" gap.
+    onSuccess: async (data) => {
+      await setSession(data);
+      useToastStore.getState().show(`Account created. Welcome, ${data.username}.`);
+      navigation.navigate('Account');
+    },
     onError: () => setServerError('Could not create account. Username or email may already be taken.'),
   });
 
@@ -47,6 +70,10 @@ export default function RegisterScreen({ navigation }: Props) {
                 label={name === 'confirmPassword' ? 'Confirm password' : name}
                 secureTextEntry={name.toLowerCase().includes('password')}
                 autoCapitalize="none"
+                autoCorrect={false}
+                textContentType={AUTOFILL[name].textContentType}
+                autoComplete={AUTOFILL[name].autoComplete}
+                keyboardType={AUTOFILL[name].keyboardType}
                 value={field.value}
                 onChangeText={field.onChange}
                 style={styles.input}

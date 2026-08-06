@@ -1,6 +1,6 @@
 import React from 'react';
-import { ScrollView, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, List, Text } from 'react-native-paper';
+import { ScrollView, StyleSheet } from 'react-native';
+import { ActivityIndicator, Card, List } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { getRankings } from './api';
@@ -89,20 +89,23 @@ export default function RankingsScreen() {
   );
 }
 
+// Each section used to be a bare title + stacked List.Items directly on
+// the screen background, so six sections in a row on one long scroll read
+// as a single undifferentiated list with no visual separation - reported
+// 2026-08-06 ("otherwise it looks like a long list"). A Card per section
+// gives each its own surface/elevation, same grouping web gets for free
+// from RankingsGrid's per-section bordered panels.
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <View style={styles.section}>
-      <Text variant="titleMedium" style={styles.sectionTitle}>
-        {title}
-      </Text>
-      {children}
-    </View>
+    <Card style={styles.section}>
+      <Card.Title title={title} />
+      <Card.Content>{children}</Card.Content>
+    </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  content: { padding: 16, gap: 20 },
+  content: { padding: 16, gap: 16 },
   section: { gap: 4 },
-  sectionTitle: { marginBottom: 4 },
   loader: { marginTop: 40 },
 });

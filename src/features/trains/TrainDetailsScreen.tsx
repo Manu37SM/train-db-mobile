@@ -256,6 +256,7 @@ export default function TrainDetailsScreen({ route }: Props) {
                       <IconButton
                         icon={role === 'board' ? 'human-male-board' : 'human-male-board-poll'}
                         size={16}
+                        iconColor="#1e293b"
                         style={styles.stopBadgeIcon}
                       />
                     ) : (
@@ -265,31 +266,36 @@ export default function TrainDetailsScreen({ route }: Props) {
 
                   <View style={styles.stopMain}>
                     <View style={styles.stopTitleRow}>
-                      <Text style={styles.stopStationCode}>{stop.stationCode}</Text>
-                      <Text style={styles.stopStationName} numberOfLines={1}>
+                      <Text style={[styles.stopStationCode, role ? styles.stopTextOnLightRow : undefined]}>
+                        {stop.stationCode}
+                      </Text>
+                      <Text
+                        style={[styles.stopStationName, role ? styles.stopTextOnLightRow : undefined]}
+                        numberOfLines={1}
+                      >
                         {stop.stationName}
                       </Text>
                     </View>
 
                     <View style={styles.stopBadgeRow}>
                       {isOrigin && (
-                        <Chip compact style={styles.originChip} textStyle={styles.chipText}>
+                        <Chip compact style={styles.originChip} textStyle={[styles.chipText, styles.originChipText]}>
                           Origin
                         </Chip>
                       )}
                       {isDestination && (
-                        <Chip compact style={styles.destinationChip} textStyle={styles.chipText}>
+                        <Chip compact style={styles.destinationChip} textStyle={[styles.chipText, styles.destinationChipText]}>
                           Destination
                         </Chip>
                       )}
                       {!!stop.haltMinutes && stop.haltMinutes > 0 && (
-                        <Chip compact style={styles.haltChip} textStyle={styles.chipText}>
+                        <Chip compact style={styles.haltChip} textStyle={[styles.chipText, styles.haltChipText]}>
                           Halt {stop.haltMinutes}m
                         </Chip>
                       )}
                     </View>
 
-                    <Text style={styles.stopMeta}>
+                    <Text style={[styles.stopMeta, role ? styles.stopTextOnLightRow : undefined]}>
                       Arr {stop.arrivalTime ?? '--'} · Dep {stop.departureTime ?? '--'} · Day {stop.journeyDay} ·{' '}
                       {stop.distance ?? '--'} km
                     </Text>
@@ -357,9 +363,20 @@ const styles = StyleSheet.create({
   stopStationCode: { fontWeight: '700' },
   stopStationName: { flexShrink: 1, opacity: 0.8 },
   stopBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  // These chips use a fixed light background regardless of theme, so they
+  // need a fixed dark text color too - Chip's default textStyle color
+  // comes from react-native-paper's theme (near-white in dark mode), which
+  // was unreadable against these light backgrounds. Reported 2026-08-06 as
+  // "unable to see anything" for the halt badge in dark mode.
   chipText: { fontSize: 11, lineHeight: 14 },
   originChip: { backgroundColor: '#dcfce7' },
+  originChipText: { color: '#166534' },
   destinationChip: { backgroundColor: '#fee2e2' },
+  destinationChipText: { color: '#991b1b' },
   haltChip: { backgroundColor: '#dbeafe' },
+  haltChipText: { color: '#1e40af' },
+  // boardRow/deboardRow (below) are also fixed light backgrounds - text
+  // inside them needs the same dark-text override, not just the chips.
+  stopTextOnLightRow: { color: '#1e293b' },
   stopMeta: { fontSize: 12, opacity: 0.7, marginTop: 2 },
 });

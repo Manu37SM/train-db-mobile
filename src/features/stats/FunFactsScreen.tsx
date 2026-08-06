@@ -1,6 +1,6 @@
 import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, Chip, Text } from 'react-native-paper';
+import { ActivityIndicator, Card, Chip, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { getFunStats } from './api';
@@ -23,37 +23,37 @@ export default function FunFactsScreen() {
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {data.longestStationName && (
-        <Section title="Longest station name">
+        <FactCard title="Longest station name">
           <Text style={styles.link} onPress={() => openStation(data.longestStationName!.stationCode)}>
             {data.longestStationName.stationName} ({data.longestStationName.stationCode}) — {data.longestStationName.length} characters
           </Text>
-        </Section>
+        </FactCard>
       )}
 
       {data.shortestStationName && (
-        <Section title="Shortest station name">
+        <FactCard title="Shortest station name">
           <Text style={styles.link} onPress={() => openStation(data.shortestStationName!.stationCode)}>
             {data.shortestStationName.stationName} ({data.shortestStationName.stationCode}) — {data.shortestStationName.length}{' '}
             characters
           </Text>
-        </Section>
+        </FactCard>
       )}
 
       {data.mostCommonStationNameWord && (
-        <Section title="Most common word in station names">
+        <FactCard title="Most common word in station names">
           <Text>
             "{data.mostCommonStationNameWord.word}" appears {data.mostCommonStationNameWord.count} times
           </Text>
-        </Section>
+        </FactCard>
       )}
 
       {data.trainWithMostUniqueStations && (
-        <Section title="Train with most unique stations">
+        <FactCard title="Train with most unique stations">
           <Text style={styles.link} onPress={() => openTrain(data.trainWithMostUniqueStations!.trainNumber)}>
             {data.trainWithMostUniqueStations.trainNumber} · {data.trainWithMostUniqueStations.trainName} —{' '}
             {data.trainWithMostUniqueStations.uniqueStationCount} stations
           </Text>
-        </Section>
+        </FactCard>
       )}
 
       {/* Letter counts only - the backend doesn't return which stations
@@ -95,6 +95,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       </Text>
       {children}
     </View>
+  );
+}
+
+// Only the four single-fact sections (longest/shortest station name, most
+// common word, train with most unique stations) get a Card - each one was
+// a title plus a single line of text with nothing to visually distinguish
+// it from the next, reading as one long undifferentiated list (reported
+// 2026-08-06). "Stations by first letter" and "Palindrome station codes"
+// are already their own distinct grid/chip-block layouts (Section, above)
+// and don't have that problem, so they're deliberately left alone rather
+// than wrapped for the sake of consistency alone.
+function FactCard({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <Card style={styles.section}>
+      <Card.Title title={title} />
+      <Card.Content>{children}</Card.Content>
+    </Card>
   );
 }
 

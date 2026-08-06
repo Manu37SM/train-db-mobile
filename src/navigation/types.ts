@@ -7,7 +7,19 @@
  * React Navigation's navigation objects satisfy this structurally.
  */
 export type AuthNavigation = {
-  navigate: (screen: 'Login' | 'Register') => void;
+  // 'Account' added so LoginScreen/RegisterScreen can return there after a
+  // successful sign-in - previously neither screen navigated anywhere on
+  // success, so the app just sat on the auth form until the user manually
+  // tapped the Account tab again. Reported 2026-08-06.
+  //
+  // navigate('Account'), not goBack(): Register is reachable both directly
+  // from Account *and* via Login ("Create an account" link), so the stack
+  // depth to pop varies. React Navigation's stack navigator already pops
+  // back to an existing route rather than pushing a duplicate when you
+  // navigate() to a screen already in the stack, which handles both entry
+  // paths correctly - goBack() would only undo one step, landing back on
+  // Login instead of Account for the Login -> Register path.
+  navigate: (screen: 'Login' | 'Register' | 'Account') => void;
 };
 
 export type TrainsStackParamList = {

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, KeyboardAvoidingView, Platform, View, StyleSheet } from 'react-native';
 import { Chip, IconButton, Modal, Text, TextInput } from 'react-native-paper';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useHistoryStore } from '@/features/history/store';
 import { navigationRef } from '@/navigation/navigationRef';
+import { useResolvedTheme } from '@/theme/useResolvedTheme';
 import {
   AssistantAction,
   buildAssistantResponse,
@@ -35,6 +37,36 @@ const QUICK_ACTIONS: { label: string; action: AssistantAction }[] = [
   { label: 'Help', action: { type: 'help' } },
 ];
 
+// The card's colors used to be hardcoded for a light background
+// (`backgroundColor: 'white'`, default-themed text on top of it) - that
+// was never correct, but went unnoticed while the app's dark-theme wiring
+// itself was still broken (see RootNavigator/useResolvedTheme's history).
+// Now that dark mode is real, every default-themed text element (header
+// title, welcome bubble, chip labels) rendered light-on-white and vanished
+// - reported 2026-08-06 as "how will user get anything from that". Mirrors
+// train-db-frontend's AssistantDialog, which already has explicit
+// `dark:bg-slate-900` etc. for exactly this reason.
+const PALETTES = {
+  light: {
+    card: '#ffffff',
+    border: '#e2e8f0',
+    title: '#0f172a',
+    muted: '#64748b',
+    assistantBubble: '#eee',
+    assistantText: '#0f172a',
+    inputBg: '#f8fafc',
+  },
+  dark: {
+    card: '#0f172a',
+    border: '#1e293b',
+    title: '#f1f5f9',
+    muted: '#94a3b8',
+    assistantBubble: '#1e293b',
+    assistantText: '#f1f5f9',
+    inputBg: '#1e293b',
+  },
+};
+
 /**
  * Mobile port of train-db-frontend's AssistantDialog.tsx, using the
  * byte-equivalent intent logic in assistantIntent.ts. Same conversational
@@ -49,6 +81,26 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
   const [messages, setMessages] = useState<Message[]>([WELCOME]);
   const [mode, setMode] = useState<ConversationState>({ type: 'default' });
   const [input, setInput] = useState('');
+  const resolvedScheme = useResolvedTheme();
+  const insets = useSafeAreaInsets();
+  const palette = PALETTES[resolvedScheme];
+
+  // Same tab-bar-clearance math as AssistantFab (see that component for
+  // why this can't just be useBottomTabBarHeight()) - anchors the panel
+  // just above the FAB it opens from, right side, bottom-anchored, instead
+  // of full-screen-centered. Matches train-db-frontend's AssistantDialog
+  // (`fixed right-6 bottom-24 ... h-[600px] w-[380px]`) - a chat panel
+  // anchored near where you summoned it from, not a dialog that appears in
+  // the middle of whatever else is on screen. Reported 2026-08-06 as "why
+  // its opening in the middle like that".
+  const dialogStyle = useMemo(
+    () => ({
+      backgroundColor: palette.card,
+      borderColor: palette.border,
+      marginBottom: 56 + 16 + insets.bottom + 8,
+    }),
+    [palette, insets.bottom],
+  );
 
   const favoriteEntries: FavoriteEntry[] = [
     ...favorites.trains.map((t): FavoriteEntry => ({ type: 'train', trainNumber: t })),
@@ -227,11 +279,18 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
   }
 
   return (
-    <Modal visible={visible} onDismiss={close} contentContainerStyle={styles.modal}>
+    <Modal
+      visible={visible}
+      onDismiss={close}
+      style={styles.wrapperOverride}
+      contentContainerStyle={[styles.modal, dialogStyle]}
+    >
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={styles.flexFull}>
-        <View style={styles.header}>
-          <Text variant="titleMedium">RailLens Assistant</Text>
-          <IconButton icon="close" onPress={close} />
+        <View style={[styles.header, { borderBottomColor: palette.border }]}>
+          <Text variant="titleMedium" style={{ color: palette.title }}>
+            RailLens Assistant
+          </Text>
+          <IconButton icon="close" iconColor={palette.title} onPress={close} />
         </View>
 
         <FlatList
@@ -239,8 +298,13 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
           keyExtractor={(m) => m.id}
           style={styles.messages}
           renderItem={({ item }) => (
-            <View style={[styles.bubble, item.role === 'user' ? styles.userBubble : styles.assistantBubble]}>
-              <Text style={item.role === 'user' ? styles.userText : undefined}>{item.content}</Text>
+            <View
+              style={[
+                styles.bubble,
+                item.role === 'user' ? styles.userBubble : { backgroundColor: palette.assistantBubble, alignSelf: 'flex-start' },
+              ]}
+            >
+              <Text style={item.role === 'user' ? styles.userText : { color: palette.assistantText }}>{item.content}</Text>
             </View>
           )}
         />
@@ -249,13 +313,15 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
           {QUICK_ACTIONS.map((qa) => (
             <Chip
               key={qa.label}
+              mode="outlined"
+              textStyle={{ color: palette.title }}
               onPress={() => {
                 if (qa.action.type === 'trains') return startGuidedMode('train');
                 if (qa.action.type === 'stations') return startGuidedMode('station');
                 if (qa.action.type === 'journeys') return startGuidedMode('journey');
                 handleQuickAction(qa.action);
               }}
-              style={styles.chip}
+              style={[styles.chip, { borderColor: palette.border }]}
             >
               {qa.label}
             </Chip>
@@ -279,19 +345,24 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
 }
 
 const styles = StyleSheet.create({
-  // No `flex: 1` here - react-native-paper's Modal already centers this
-  // card inside a full-screen, absolutely-positioned wrapper. `flex: 1`
-  // made this the wrapper's sole flex child stretch to fill its entire
-  // height (overriding that centering), so the card pinned to the top and
-  // `maxHeight` just capped how tall the stretched box was, leaving a big
-  // empty gap below the input - reported 2026-08-06 from a screenshot.
-  // Without `flex`, the card sizes to its content, capped by `maxHeight`.
-  modal: { backgroundColor: 'white', margin: 16, borderRadius: 16, maxHeight: '80%' },
+  // Anchors the panel to the bottom-right instead of Paper Modal's default
+  // full-screen-centered wrapper - see the `dialogStyle`/PALETTES comments
+  // above for why (matches web's fixed bottom-right chat panel instead of
+  // a dialog that appears in the middle of whatever's on screen).
+  wrapperOverride: { justifyContent: 'flex-end', alignItems: 'flex-end' },
+  // A fixed height (not content-sized) so the panel is immediately
+  // recognizable as a chat surface and has room to scroll - matches web's
+  // `h-[600px] w-[380px]`, capped against the actual device size here
+  // since phones vary far more than desktop viewports do.
+  modal: { width: '92%', maxWidth: 380, height: '65%', maxHeight: 560, marginRight: 12, borderRadius: 16, borderWidth: 1 },
   flexFull: { flex: 1 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
-  messages: { flexGrow: 0, paddingHorizontal: 12 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottomWidth: 1 },
+  // flex: 1 (not the old flexGrow: 0) - the card now has a real fixed
+  // height to grow into, so the message list should fill whatever space
+  // the header/chips/input don't use, scrolling once it has more messages
+  // than fit, rather than sizing to exactly its current content.
+  messages: { flex: 1, paddingHorizontal: 12, paddingTop: 8 },
   bubble: { padding: 10, borderRadius: 10, marginBottom: 8, maxWidth: '85%' },
-  assistantBubble: { backgroundColor: '#eee', alignSelf: 'flex-start' },
   userBubble: { backgroundColor: '#0F62FE', alignSelf: 'flex-end' },
   userText: { color: 'white' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingHorizontal: 12, paddingBottom: 8 },

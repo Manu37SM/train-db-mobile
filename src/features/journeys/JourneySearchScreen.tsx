@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FlatList, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, Button, Card, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, IconButton, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
@@ -9,8 +9,20 @@ import { useHistoryStore } from '@/features/history/store';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { StationAutocomplete } from '@/components/StationAutocomplete';
 import type { JourneysStackParamList } from '@/navigation/types';
+import type { JourneyTrainResponse } from '@/types/api';
 
 type Props = NativeStackScreenProps<JourneysStackParamList, 'JourneySearch'>;
+
+type SortMode = 'fastest' | 'slowest';
+
+// Same fix/reasoning as train-db-frontend's JourneyResults.tsx: total
+// travel time (moving + halted), not the fixed track `distance` between
+// the two searched stations - every train in one result set shares that
+// same distance, so sorting by it is a no-op. See that file's comment for
+// the full "fastest first button doing nothing" history.
+function totalMinutes(train: JourneyTrainResponse): number {
+  return train.movingMinutes + train.haltedMinutes;
+}
 
 /**
  * Mirrors train-db-frontend's /journeys page (JourneySearchForm +
@@ -36,6 +48,19 @@ export default function JourneySearchScreen({ route }: Props) {
   // /journeys?from=&to= query string.
   const [from, setFrom] = useState(route.params?.from ?? defaultFromStationCode ?? '');
   const [to, setTo] = useState(route.params?.to ?? '');
+  // Display labels are tracked separately from the from/to codes used for
+  // the actual search, purely so handleSwap has something to show in each
+  // field immediately - StationAutocomplete (unlike web's, which exposes a
+  // setStation() ref method) owns its typed text as fully internal state
+  // with no imperative API to update it after mount, so swapping is done
+  // by changing each field's `key` (forcing a remount with a new
+  // `initialLabel`) rather than reaching into it.
+  const [fromLabel, setFromLabel] = useState(
+    route.params?.from ?? (defaultFromStationCode && defaultFromStationName ? `${defaultFromStationCode} · ${defaultFromStationName}` : ''),
+  );
+  const [toLabel, setToLabel] = useState(route.params?.to ?? '');
+  const [swapCount, setSwapCount] = useState(0);
+  const [sortMode, setSortMode] = useState<SortMode>('fastest');
   const [submitted, setSubmitted] = useState<{ from: string; to: string } | null>(
     route.params?.from && route.params?.to ? { from: route.params.from, to: route.params.to } : null,
   );
@@ -47,6 +72,12 @@ export default function JourneySearchScreen({ route }: Props) {
     enabled: !!submitted,
   });
 
+  const sortedTrains = useMemo(() => {
+    if (!data) return [];
+    const sorted = [...data.trains].sort((a, b) => totalMinutes(a) - totalMinutes(b));
+    return sortMode === 'fastest' ? sorted : sorted.reverse();
+  }, [data, sortMode]);
+
   const runSearch = () => {
     if (!from.trim() || !to.trim()) return;
     const query = { from: from.trim().toUpperCase(), to: to.trim().toUpperCase() };
@@ -54,18 +85,42 @@ export default function JourneySearchScreen({ route }: Props) {
     record({ type: 'journey', query: `${query.from}-${query.to}` });
   };
 
+  const handleSwap = () => {
+    if (!from && !to) return;
+    const nextFrom = to;
+    const nextTo = from;
+    setFrom(nextFrom);
+    setTo(nextTo);
+    setFromLabel(toLabel);
+    setToLabel(fromLabel);
+    setSwapCount((c) => c + 1);
+  };
+
   return (
     <View style={styles.container}>
+      <View style={styles.fieldRow}>
+        <View style={styles.fieldGrow}>
+          <StationAutocomplete
+            key={`from-${swapCount}`}
+            label="From"
+            initialLabel={fromLabel || undefined}
+            onSelect={(station) => {
+              setFrom(station?.stationCode ?? '');
+              setFromLabel(station ? `${station.stationCode} · ${station.stationName}` : '');
+            }}
+          />
+        </View>
+        <IconButton icon="swap-vertical" mode="outlined" onPress={handleSwap} style={styles.swapButton} accessibilityLabel="Swap stations" />
+      </View>
       <StationAutocomplete
-        label="From"
-        initialLabel={
-          defaultFromStationCode && defaultFromStationName
-            ? `${defaultFromStationCode} · ${defaultFromStationName}`
-            : undefined
-        }
-        onSelect={(station) => setFrom(station?.stationCode ?? '')}
+        key={`to-${swapCount}`}
+        label="To"
+        initialLabel={toLabel || undefined}
+        onSelect={(station) => {
+          setTo(station?.stationCode ?? '');
+          setToLabel(station ? `${station.stationCode} · ${station.stationName}` : '');
+        }}
       />
-      <StationAutocomplete label="To" onSelect={(station) => setTo(station?.stationCode ?? '')} />
       <Button mode="contained" onPress={runSearch} style={styles.button}>
         Search journeys
       </Button>
@@ -74,8 +129,24 @@ export default function JourneySearchScreen({ route }: Props) {
       {isError && <Text style={styles.error}>No journeys found between these stations.</Text>}
       {data && data.trains.length === 0 && <Text style={styles.error}>No direct trains found between these stations.</Text>}
 
+      {data && data.trains.length > 0 && (
+        <View style={styles.sortRow}>
+          <Text style={styles.resultCount}>
+            {data.totalTrains} train{data.totalTrains === 1 ? '' : 's'} found
+          </Text>
+          <Button
+            compact
+            mode="outlined"
+            icon="sort"
+            onPress={() => setSortMode((prev) => (prev === 'fastest' ? 'slowest' : 'fastest'))}
+          >
+            {sortMode === 'fastest' ? 'Fastest first' : 'Slowest first'}
+          </Button>
+        </View>
+      )}
+
       <FlatList
-        data={data?.trains ?? []}
+        data={sortedTrains}
         keyExtractor={(item) => item.trainNumber}
         renderItem={({ item }) => (
           <Card
@@ -104,8 +175,13 @@ export default function JourneySearchScreen({ route }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12 },
+  fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  fieldGrow: { flex: 1 },
+  swapButton: { marginTop: 4 },
   button: { marginBottom: 12 },
   card: { marginBottom: 10 },
   loader: { marginTop: 16 },
   error: { textAlign: 'center', marginTop: 16, opacity: 0.7 },
+  sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  resultCount: { opacity: 0.7, fontSize: 12 },
 });
