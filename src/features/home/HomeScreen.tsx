@@ -1,13 +1,32 @@
 import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { Button, Text, List, Chip } from 'react-native-paper';
+import { Button, Text, List, Chip, IconButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
 import { ActionGrid, ActionGridItem } from '@/components/ActionGrid';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { useHistoryStore } from '@/features/history/store';
 import { BRAND } from '@/theme/theme';
+import { usePreferencesStore, ThemePreference } from '@/store/preferencesStore';
 import { usePopularityStore, getPopularTrains, getPopularStations } from './popularityStore';
+
+// Mirrors train-db-frontend's navbar ThemeToggle (sun/moon/monitor,
+// cycling light -> dark -> system). Theme *could* only be changed from
+// Account > Settings on mobile - reported 2026-08-06 as "no utility to
+// change from dark to light" on the home page, so this puts the same
+// three-way toggle where the website keeps it: always-visible in the
+// header, not two navigations deep.
+const THEME_CYCLE: Record<ThemePreference, ThemePreference> = {
+  light: 'dark',
+  dark: 'system',
+  system: 'light',
+};
+
+const THEME_ICON: Record<ThemePreference, string> = {
+  light: 'weather-sunny',
+  dark: 'weather-night',
+  system: 'theme-light-dark',
+};
 
 function getGreeting() {
   const hour = new Date().getHours();
@@ -31,6 +50,7 @@ function getGreeting() {
  */
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
+  const { theme: themePreference, setTheme } = usePreferencesStore();
   const { trains, stations, routes } = useFavoritesStore();
   const { recent } = useHistoryStore();
   usePopularityStore(); // subscribe so Popular section re-renders after a view is recorded elsewhere
@@ -124,6 +144,13 @@ export default function HomeScreen() {
       onPress: () => navigation.navigate('ExploreTab', { screen: 'FunFacts' }),
     },
     {
+      key: 'achievements',
+      title: 'Achievements',
+      description: 'Longest routes, fastest trains, rare routes, and more.',
+      icon: 'medal-outline',
+      onPress: () => navigation.navigate('ExploreTab', { screen: 'Achievements' }),
+    },
+    {
       key: 'smart-search',
       title: 'Smart Search',
       description: 'Query trains in plain language.',
@@ -149,9 +176,15 @@ export default function HomeScreen() {
           <View style={styles.logoBox}>
             <Icon name="train" size={20} color="#fff" />
           </View>
-          <Text variant="headlineMedium" style={styles.heroTitle}>
+          <Text variant="headlineMedium" style={[styles.heroTitle, styles.heroTitleGrow]}>
             RailLens
           </Text>
+          <IconButton
+            icon={THEME_ICON[themePreference]}
+            mode="outlined"
+            onPress={() => setTheme(THEME_CYCLE[themePreference])}
+            accessibilityLabel={`Theme: ${themePreference}. Tap to change.`}
+          />
         </View>
         <Text style={styles.heroSubtitle}>
           Your personal railway dashboard for searching trains, exploring stations and continuing your journeys.
@@ -293,6 +326,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   heroTitle: { fontWeight: '700' },
+  heroTitleGrow: { flex: 1 },
   heroSubtitle: { opacity: 0.7 },
   statsRow: { flexDirection: 'row', gap: 12, marginTop: 4 },
   statCard: {

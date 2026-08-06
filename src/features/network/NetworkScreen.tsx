@@ -1,15 +1,35 @@
 import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, List, Text } from 'react-native-paper';
+import { ActivityIndicator, Button, List, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getNetworkStats } from './api';
 import { StatCard } from '@/components/StatCard';
 
 /** Mirrors train-db-frontend's /network page (NetworkStatsGrid). */
 export default function NetworkScreen() {
-  const { data, isLoading } = useQuery({ queryKey: ['network', 'stats'], queryFn: getNetworkStats });
+  const { data, isLoading, isError, refetch, isRefetching } = useQuery({
+    queryKey: ['network', 'stats'],
+    queryFn: getNetworkStats,
+  });
 
-  if (isLoading || !data) return <ActivityIndicator style={styles.loader} />;
+  if (isLoading) return <ActivityIndicator style={styles.loader} />;
+
+  // Without this, a failed/errored request (e.g. a cold Render instance
+  // timing out) left `data` undefined forever while `isLoading` had
+  // already settled to false - the `isLoading || !data` guard this
+  // replaced treated that identically to "still loading", so the screen
+  // just spun forever instead of surfacing the failure. Reported
+  // 2026-08-06 as "Railway Network page keeps loading".
+  if (isError || !data) {
+    return (
+      <View style={styles.loader}>
+        <Text style={styles.errorText}>Couldn't load network stats.</Text>
+        <Button mode="outlined" onPress={() => refetch()} loading={isRefetching}>
+          Retry
+        </Button>
+      </View>
+    );
+  }
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
@@ -44,5 +64,6 @@ const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   section: { gap: 4 },
   sectionTitle: { marginBottom: 4 },
-  loader: { marginTop: 40 },
+  loader: { marginTop: 40, alignItems: 'center', gap: 12 },
+  errorText: { opacity: 0.7 },
 });

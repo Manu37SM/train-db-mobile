@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { ActivityIndicator, Chip, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import { getFunStats } from './api';
 
 const ALPHABET = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
@@ -9,14 +10,21 @@ const ALPHABET = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i
 /** Mirrors train-db-frontend's /fun-facts page (FunFactsGrid). */
 export default function FunFactsScreen() {
   const { data, isLoading } = useQuery({ queryKey: ['stats', 'fun-facts'], queryFn: getFunStats });
+  const navigation = useNavigation<any>();
 
   if (isLoading || !data) return <ActivityIndicator style={styles.loader} />;
+
+  const openStation = (stationCode: string) =>
+    navigation.navigate('StationsTab', { screen: 'StationDetails', params: { stationCode } });
+
+  const openTrain = (trainNumber: string) =>
+    navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber } });
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       {data.longestStationName && (
         <Section title="Longest station name">
-          <Text>
+          <Text style={styles.link} onPress={() => openStation(data.longestStationName!.stationCode)}>
             {data.longestStationName.stationName} ({data.longestStationName.stationCode}) — {data.longestStationName.length} characters
           </Text>
         </Section>
@@ -24,7 +32,7 @@ export default function FunFactsScreen() {
 
       {data.shortestStationName && (
         <Section title="Shortest station name">
-          <Text>
+          <Text style={styles.link} onPress={() => openStation(data.shortestStationName!.stationCode)}>
             {data.shortestStationName.stationName} ({data.shortestStationName.stationCode}) — {data.shortestStationName.length}{' '}
             characters
           </Text>
@@ -41,13 +49,18 @@ export default function FunFactsScreen() {
 
       {data.trainWithMostUniqueStations && (
         <Section title="Train with most unique stations">
-          <Text>
+          <Text style={styles.link} onPress={() => openTrain(data.trainWithMostUniqueStations!.trainNumber)}>
             {data.trainWithMostUniqueStations.trainNumber} · {data.trainWithMostUniqueStations.trainName} —{' '}
             {data.trainWithMostUniqueStations.uniqueStationCount} stations
           </Text>
         </Section>
       )}
 
+      {/* Letter counts only - the backend doesn't return which stations
+          make up each count, and StationSearch has no "initial letter"
+          param to filter by, so there's nowhere to send a tap yet. Would
+          need a backend field (e.g. a station-code list per letter) or a
+          new search param before this can link anywhere. */}
       <Section title="Stations by first letter">
         <View style={styles.letterGrid}>
           {ALPHABET.map((letter) => (
@@ -63,7 +76,9 @@ export default function FunFactsScreen() {
         <Section title="Palindrome station codes">
           <View style={styles.chipRow}>
             {data.palindromeStationCodes.map((code) => (
-              <Chip key={code}>{code}</Chip>
+              <Chip key={code} onPress={() => openStation(code)}>
+                {code}
+              </Chip>
             ))}
           </View>
         </Section>
@@ -99,4 +114,5 @@ const styles = StyleSheet.create({
   },
   letterCount: { opacity: 0.6, fontSize: 12 },
   chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  link: { color: '#2563eb' },
 });

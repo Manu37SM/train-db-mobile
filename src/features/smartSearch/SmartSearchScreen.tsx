@@ -1,9 +1,21 @@
 import React, { useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, Button, List, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, Chip, List, Text, TextInput } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { smartSearch } from './api';
+
+// Mirrors train-db-frontend's SmartSearchClient EXAMPLES list exactly (same
+// four example queries) - mobile only had a static, non-interactive hint
+// line, no tappable shortcuts, reported 2026-08-06 as a gap vs. the website.
+// Tapping one both fills the input and runs the search immediately, same
+// one-tap behavior as web's example chips.
+const EXAMPLES = [
+  'trains that stop at both NDLS and HWH',
+  'trains from NDLS to HWH',
+  'trains longer than 1000km',
+  'trains with more than 20 halts',
+];
 
 /**
  * Mirrors train-db-frontend's /smart-search page - same fixed query
@@ -48,6 +60,21 @@ export default function SmartSearchScreen() {
         Search
       </Button>
 
+      <View style={styles.exampleRow}>
+        {EXAMPLES.map((example) => (
+          <Chip
+            key={example}
+            style={styles.exampleChip}
+            onPress={() => {
+              setInput(example);
+              setSubmitted(example);
+            }}
+          >
+            {example}
+          </Chip>
+        ))}
+      </View>
+
       {isFetching && <ActivityIndicator style={styles.loader} />}
       {isError && <Text style={styles.error}>Something went wrong. Please try again.</Text>}
 
@@ -84,6 +111,8 @@ const styles = StyleSheet.create({
   container: { flex: 1, padding: 12 },
   hint: { marginBottom: 8, opacity: 0.7 },
   input: { marginBottom: 8 },
+  exampleRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, marginTop: 12 },
+  exampleChip: { marginBottom: 4 },
   loader: { marginTop: 16 },
   error: { marginTop: 16, opacity: 0.7 },
   results: { marginTop: 16 },

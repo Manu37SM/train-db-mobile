@@ -279,7 +279,14 @@ export function AssistantDialog({ visible, onDismiss }: { visible: boolean; onDi
 }
 
 const styles = StyleSheet.create({
-  modal: { backgroundColor: 'white', margin: 16, borderRadius: 16, maxHeight: '80%', flex: 1 },
+  // No `flex: 1` here - react-native-paper's Modal already centers this
+  // card inside a full-screen, absolutely-positioned wrapper. `flex: 1`
+  // made this the wrapper's sole flex child stretch to fill its entire
+  // height (overriding that centering), so the card pinned to the top and
+  // `maxHeight` just capped how tall the stretched box was, leaving a big
+  // empty gap below the input - reported 2026-08-06 from a screenshot.
+  // Without `flex`, the card sizes to its content, capped by `maxHeight`.
+  modal: { backgroundColor: 'white', margin: 16, borderRadius: 16, maxHeight: '80%' },
   flexFull: { flex: 1 },
   header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12 },
   messages: { flexGrow: 0, paddingHorizontal: 12 },

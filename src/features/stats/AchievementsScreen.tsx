@@ -2,6 +2,7 @@ import React from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
 import { ActivityIndicator, List, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import { getAchievements } from './api';
 
 /**
@@ -16,14 +17,23 @@ const PREVIEW_COUNT = 20;
 
 export default function AchievementsScreen() {
   const { data, isLoading } = useQuery({ queryKey: ['stats', 'achievements'], queryFn: getAchievements });
+  const navigation = useNavigation<any>();
 
   if (isLoading || !data) return <ActivityIndicator style={styles.loader} />;
+
+  const openTrain = (trainNumber: string) =>
+    navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber } });
 
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Section title={`Longest routes (top ${Math.min(PREVIEW_COUNT, data.longestRoutes.length)} of ${data.longestRoutes.length})`}>
         {data.longestRoutes.slice(0, PREVIEW_COUNT).map((r) => (
-          <List.Item key={r.trainNumber} title={`${r.trainNumber} · ${r.trainName}`} description={`${r.distanceKm ?? '—'} km`} />
+          <List.Item
+            key={r.trainNumber}
+            title={`${r.trainNumber} · ${r.trainName}`}
+            description={`${r.distanceKm ?? '—'} km`}
+            onPress={() => openTrain(r.trainNumber)}
+          />
         ))}
       </Section>
 
@@ -33,13 +43,19 @@ export default function AchievementsScreen() {
             key={t.trainNumber}
             title={`${t.trainNumber} · ${t.trainName}`}
             description={`${t.averageSpeedKmh.toFixed(1)} km/h`}
+            onPress={() => openTrain(t.trainNumber)}
           />
         ))}
       </Section>
 
       <Section title="Mega routes (>3000 km)">
         {data.megaRoutes.map((r) => (
-          <List.Item key={r.trainNumber} title={`${r.trainNumber} · ${r.trainName}`} description={`${r.distanceKm ?? '—'} km`} />
+          <List.Item
+            key={r.trainNumber}
+            title={`${r.trainNumber} · ${r.trainName}`}
+            description={`${r.distanceKm ?? '—'} km`}
+            onPress={() => openTrain(r.trainNumber)}
+          />
         ))}
       </Section>
 
@@ -49,6 +65,7 @@ export default function AchievementsScreen() {
             key={t.trainNumber}
             title={`${t.trainNumber} · ${t.trainName}`}
             description={`${t.kmPerHalt.toFixed(1)} km/halt`}
+            onPress={() => openTrain(t.trainNumber)}
           />
         ))}
       </Section>
@@ -59,6 +76,7 @@ export default function AchievementsScreen() {
             key={t.trainNumber}
             title={`${t.trainNumber} · ${t.trainName}`}
             description={`${t.averageTrainsPerHop.toFixed(2)} trains/hop avg`}
+            onPress={() => openTrain(t.trainNumber)}
           />
         ))}
       </Section>
@@ -69,6 +87,7 @@ export default function AchievementsScreen() {
             key={t.trainNumber}
             title={`${t.trainNumber} · ${t.trainName}`}
             description={`${t.distanceKm} km · ${t.averageSpeedKmh.toFixed(1)} km/h`}
+            onPress={() => openTrain(t.trainNumber)}
           />
         ))}
       </Section>

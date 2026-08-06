@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { ActivityIndicator, Button, Card, Chip, IconButton, List, Text, TextInput } from 'react-native-paper';
+import { ActivityIndicator, Button, Card, Chip, IconButton, Text, TextInput, TouchableRipple } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigation } from '@react-navigation/native';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { compareTrains, getTrainDetails, getTrainIntelligence } from './api';
 import { useFavoritesStore } from '@/features/favorites/store';
@@ -28,6 +29,7 @@ function formatDuration(minutes: number | null): string {
  */
 export default function TrainDetailsScreen({ route }: Props) {
   const { trainNumber } = route.params;
+  const navigation = useNavigation<any>();
   const favorites = useFavoritesStore();
   const isFavorite = favorites.trains.includes(trainNumber);
   const recordTrainView = usePopularityStore((s) => s.recordTrainView);
@@ -232,23 +234,68 @@ export default function TrainDetailsScreen({ route }: Props) {
             </View>
           )}
 
-          {train.route.map((stop) => {
+          {train.route.map((stop, index) => {
             const role =
               boardStop?.sequenceNo === stop.sequenceNo ? 'board' : deboardStop?.sequenceNo === stop.sequenceNo ? 'deboard' : null;
+            const isOrigin = index === 0;
+            const isDestination = index === train.route.length - 1;
 
             return (
-              <List.Item
+              <TouchableRipple
                 key={stop.sequenceNo}
-                title={`${stop.stationName} (${stop.stationCode})`}
-                description={`Arr ${stop.arrivalTime ?? '—'} · Dep ${stop.departureTime ?? '—'} · ${stop.distance ?? '—'} km${stop.journeyDay > 1 ? ` · Day ${stop.journeyDay}` : ''}`}
-                onPress={selectMode ? () => handleSelectStop(stop) : undefined}
-                style={role === 'board' ? styles.boardRow : role === 'deboard' ? styles.deboardRow : undefined}
-                left={
-                  role
-                    ? (p) => <List.Icon {...p} icon={role === 'board' ? 'human-male-board' : 'human-male-board-poll'} />
-                    : undefined
+                onPress={
+                  selectMode
+                    ? () => handleSelectStop(stop)
+                    : () => navigation.navigate('StationsTab', { screen: 'StationDetails', params: { stationCode: stop.stationCode } })
                 }
-              />
+                style={[styles.stopRow, role === 'board' ? styles.boardRow : role === 'deboard' ? styles.deboardRow : undefined]}
+              >
+                <View style={styles.stopRowInner}>
+                  <View style={styles.stopBadge}>
+                    {role ? (
+                      <IconButton
+                        icon={role === 'board' ? 'human-male-board' : 'human-male-board-poll'}
+                        size={16}
+                        style={styles.stopBadgeIcon}
+                      />
+                    ) : (
+                      <Text style={styles.stopBadgeText}>{stop.sequenceNo}</Text>
+                    )}
+                  </View>
+
+                  <View style={styles.stopMain}>
+                    <View style={styles.stopTitleRow}>
+                      <Text style={styles.stopStationCode}>{stop.stationCode}</Text>
+                      <Text style={styles.stopStationName} numberOfLines={1}>
+                        {stop.stationName}
+                      </Text>
+                    </View>
+
+                    <View style={styles.stopBadgeRow}>
+                      {isOrigin && (
+                        <Chip compact style={styles.originChip} textStyle={styles.chipText}>
+                          Origin
+                        </Chip>
+                      )}
+                      {isDestination && (
+                        <Chip compact style={styles.destinationChip} textStyle={styles.chipText}>
+                          Destination
+                        </Chip>
+                      )}
+                      {!!stop.haltMinutes && stop.haltMinutes > 0 && (
+                        <Chip compact style={styles.haltChip} textStyle={styles.chipText}>
+                          Halt {stop.haltMinutes}m
+                        </Chip>
+                      )}
+                    </View>
+
+                    <Text style={styles.stopMeta}>
+                      Arr {stop.arrivalTime ?? '--'} · Dep {stop.departureTime ?? '--'} · Day {stop.journeyDay} ·{' '}
+                      {stop.distance ?? '--'} km
+                    </Text>
+                  </View>
+                </View>
+              </TouchableRipple>
             );
           })}
         </Card.Content>
@@ -284,4 +331,35 @@ const styles = StyleSheet.create({
   summaryActions: { flexDirection: 'row' },
   boardRow: { backgroundColor: '#dcfce7' },
   deboardRow: { backgroundColor: '#fee2e2' },
+  // Journey Timetable rows: replaces the old single-line List.Item (a
+  // title + one run-on description string) with a structured layout closer
+  // to the website's JourneyRow/JourneyTable (sequence badge, station
+  // code+name, origin/destination/halt badges, then arrival/departure/day/
+  // km on their own line) - and, unlike the List.Item version, every row
+  // is now always tappable through to that station's details (previously
+  // onPress only existed in partial-journey select mode, so rows outside
+  // that mode were fully inert - reported 2026-08-06 as "unable to click
+  // on any stations").
+  stopRow: { borderRadius: 8 },
+  stopRowInner: { flexDirection: 'row', gap: 12, paddingVertical: 10, paddingHorizontal: 4 },
+  stopBadge: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#8882',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stopBadgeText: { fontSize: 12, fontWeight: '600' },
+  stopBadgeIcon: { margin: 0 },
+  stopMain: { flex: 1, gap: 2 },
+  stopTitleRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6 },
+  stopStationCode: { fontWeight: '700' },
+  stopStationName: { flexShrink: 1, opacity: 0.8 },
+  stopBadgeRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 4 },
+  chipText: { fontSize: 11, lineHeight: 14 },
+  originChip: { backgroundColor: '#dcfce7' },
+  destinationChip: { backgroundColor: '#fee2e2' },
+  haltChip: { backgroundColor: '#dbeafe' },
+  stopMeta: { fontSize: 12, opacity: 0.7, marginTop: 2 },
 });
