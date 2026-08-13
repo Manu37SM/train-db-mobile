@@ -10,3 +10,11 @@ ios/build/
 .env
 *.log
 local.properties
+
+# Release signing - real upload key + credentials, never commit these.
+# debug.keystore is fine to keep tracked (it's the SDK's shared, public,
+# non-secret debug cert - not a security-sensitive file).
+android/keystore.properties
+android/app/*.keystore
+!android/app/debug.keystore
+android/app/*.jks
