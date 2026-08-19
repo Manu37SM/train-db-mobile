@@ -348,8 +348,17 @@ export interface DatasetHealthResponse {
   invalidRouteSamples: string[];
 }
 
+// Matches train-db's model/ApiErrorResponse.java exactly (a 3-field
+// record: timestamp, status, error) - this previously declared
+// `message`/`requestId` fields that don't exist on the real response body
+// (the request ID is only ever in the X-Request-Id response header, set
+// by RequestIdFilter, never in the JSON body). Same category of guessed-
+// field-name bug documented elsewhere in this file's history - caught
+// while wiring up lib/apiError.ts to surface real backend error text
+// (e.g. AuthService's account-lockout message) instead of hardcoded
+// generic strings.
 export interface ApiErrorResponse {
+  timestamp: string;
   status: number;
-  message: string;
-  requestId?: string;
+  error: string;
 }

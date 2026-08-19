@@ -6,6 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { login } from './api';
 import { loginSchema, LoginFormValues } from './schemas';
+import { getApiErrorMessage } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { BRAND } from '@/theme/theme';
@@ -36,7 +37,13 @@ export default function LoginScreen({ navigation }: Props) {
       useToastStore.getState().show(`Signed in as ${data.username}.`);
       navigation.navigate('Account');
     },
-    onError: () => setServerError('Invalid username/email or password.'),
+    // Surfaces the backend's actual error text (e.g. AuthService's account-lockout
+    // message, HTTP 423) instead of always showing the same generic wrong-
+    // password copy - a locked-out user needs "try again later", not "check
+    // your password", since retrying the correct password won't help either
+    // way until the lockout window passes.
+    onError: (error) =>
+      setServerError(getApiErrorMessage(error, 'Invalid username/email or password.')),
   });
 
   return (
