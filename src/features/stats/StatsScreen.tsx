@@ -4,13 +4,9 @@ import { ActivityIndicator, List, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getStats } from './api';
 import { StatCard } from '@/components/StatCard';
-
-/** Mirrors train-db-frontend's /stats page (StatsGrid). */
 export default function StatsScreen() {
   const { data, isLoading } = useQuery({ queryKey: ['stats'], queryFn: getStats });
-
   if (isLoading || !data) return <ActivityIndicator style={styles.loader} />;
-
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.grid}>
@@ -21,7 +17,8 @@ export default function StatsScreen() {
       {data.longestRoute && (
         <Section title="Longest route">
           <Text>
-            {data.longestRoute.trainNumber} · {data.longestRoute.trainName} — {data.longestRoute.distanceKm} km
+            {data.longestRoute.trainNumber} · {data.longestRoute.trainName} —{' '}
+            {data.longestRoute.distanceKm} km
           </Text>
         </Section>
       )}
@@ -29,7 +26,8 @@ export default function StatsScreen() {
       {data.shortestRoute && (
         <Section title="Shortest route">
           <Text>
-            {data.shortestRoute.trainNumber} · {data.shortestRoute.trainName} — {data.shortestRoute.distanceKm} km
+            {data.shortestRoute.trainNumber} · {data.shortestRoute.trainName} —{' '}
+            {data.shortestRoute.distanceKm} km
           </Text>
         </Section>
       )}
@@ -37,14 +35,19 @@ export default function StatsScreen() {
       {data.busiestStation && (
         <Section title="Busiest station">
           <Text>
-            {data.busiestStation.stationCode} · {data.busiestStation.stationName} — {data.busiestStation.trainCount} trains
+            {data.busiestStation.stationCode} · {data.busiestStation.stationName} —{' '}
+            {data.busiestStation.trainCount} trains
           </Text>
         </Section>
       )}
 
       <Section title="Busiest stations">
         {data.busiestStations.map((s) => (
-          <List.Item key={s.stationCode} title={`${s.stationCode} · ${s.stationName}`} description={`${s.trainCount} trains`} />
+          <List.Item
+            key={s.stationCode}
+            title={`${s.stationCode} · ${s.stationName}`}
+            description={`${s.trainCount} trains`}
+          />
         ))}
       </Section>
 
@@ -70,7 +73,6 @@ export default function StatsScreen() {
     </ScrollView>
   );
 }
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <View style={styles.section}>
@@ -81,7 +83,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   content: { padding: 16, gap: 20 },
   grid: { flexDirection: 'row', gap: 10 },

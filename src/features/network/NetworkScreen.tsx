@@ -4,22 +4,12 @@ import { ActivityIndicator, Button, List, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { getNetworkStats } from './api';
 import { StatCard } from '@/components/StatCard';
-
-/** Mirrors train-db-frontend's /network page (NetworkStatsGrid). */
 export default function NetworkScreen() {
   const { data, isLoading, isError, refetch, isRefetching } = useQuery({
     queryKey: ['network', 'stats'],
     queryFn: getNetworkStats,
   });
-
   if (isLoading) return <ActivityIndicator style={styles.loader} />;
-
-  // Without this, a failed/errored request (e.g. a cold Render instance
-  // timing out) left `data` undefined forever while `isLoading` had
-  // already settled to false - the `isLoading || !data` guard this
-  // replaced treated that identically to "still loading", so the screen
-  // just spun forever instead of surfacing the failure. Reported
-  // 2026-08-06 as "Railway Network page keeps loading".
   if (isError || !data) {
     return (
       <View style={styles.loader}>
@@ -30,7 +20,6 @@ export default function NetworkScreen() {
       </View>
     );
   }
-
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <View style={styles.grid}>
@@ -58,7 +47,6 @@ export default function NetworkScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   content: { padding: 16, gap: 20 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },

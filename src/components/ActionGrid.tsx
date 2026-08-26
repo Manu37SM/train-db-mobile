@@ -2,7 +2,6 @@ import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Card, Text } from 'react-native-paper';
 import Icon from 'react-native-vector-icons/MaterialCommunityIcons';
-
 export interface ActionGridItem {
   key: string;
   title: string;
@@ -10,13 +9,6 @@ export interface ActionGridItem {
   icon: string;
   onPress: () => void;
 }
-
-/**
- * Mobile equivalent of train-db-frontend's DashboardGrid + QuickAccessCard
- * (components/home/DashboardGrid.tsx) - a grid of tappable cards, each
- * linking to a real screen. Used by HomeScreen's Search/Explore/Railway
- * Insights sections.
- */
 export function ActionGrid({ items }: { items: ActionGridItem[] }) {
   return (
     <View style={styles.grid}>
@@ -34,7 +26,6 @@ export function ActionGrid({ items }: { items: ActionGridItem[] }) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   card: { flexBasis: '47%', flexGrow: 1 },

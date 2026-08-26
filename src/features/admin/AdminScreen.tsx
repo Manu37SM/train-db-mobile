@@ -6,54 +6,49 @@ import { clearCache, getAdminStats, getDatasetHealth, triggerImport } from './ap
 import { useAdminKeyStore } from './store';
 import { StatCard } from '@/components/StatCard';
 import type { DatasetHealthResponse } from '@/types/api';
-
 const HEALTH_CHECKS: {
   key: keyof DatasetHealthResponse & string;
   samplesKey: keyof DatasetHealthResponse & string;
   label: string;
 }[] = [
-  { key: 'duplicateScheduleRowCount', samplesKey: 'duplicateScheduleRowSamples', label: 'Duplicate schedule rows' },
+  {
+    key: 'duplicateScheduleRowCount',
+    samplesKey: 'duplicateScheduleRowSamples',
+    label: 'Duplicate schedule rows',
+  },
   { key: 'missingTimingCount', samplesKey: 'missingTimingSamples', label: 'Missing timings' },
-  { key: 'distanceInconsistencyCount', samplesKey: 'distanceInconsistencySamples', label: 'Distance inconsistencies' },
+  {
+    key: 'distanceInconsistencyCount',
+    samplesKey: 'distanceInconsistencySamples',
+    label: 'Distance inconsistencies',
+  },
   { key: 'impossibleSpeedCount', samplesKey: 'impossibleSpeedSamples', label: 'Impossible speeds' },
   { key: 'haltAnomalyCount', samplesKey: 'haltAnomalySamples', label: 'Halt anomalies' },
   { key: 'orphanStationCount', samplesKey: 'orphanStationSamples', label: 'Orphan stations' },
   { key: 'invalidRouteCount', samplesKey: 'invalidRouteSamples', label: 'Invalid routes' },
 ];
-
-/**
- * Mirrors train-db-frontend's /admin page (AdminDashboard,
- * DatasetHealthPanel, AdminKeyForm) - shared admin key, same endpoints,
- * same seven data-quality checks, and the same "run import" confirm flow
- * (was missing entirely until the 2026-07-30 audit pass).
- */
 export default function AdminScreen() {
   const { key, hydrated, hydrate, setKey, clearKey } = useAdminKeyStore();
   const [input, setInput] = useState('');
   const [confirmingImport, setConfirmingImport] = useState(false);
   const queryClient = useQueryClient();
-
   useEffect(() => {
     if (!hydrated) hydrate();
   }, [hydrated, hydrate]);
-
   const statsQuery = useQuery({
     queryKey: ['admin', 'stats', key],
     queryFn: () => getAdminStats(key!),
     enabled: !!key,
   });
-
   const healthQuery = useQuery({
     queryKey: ['admin', 'health', key],
     queryFn: () => getDatasetHealth(key!),
     enabled: !!key,
   });
-
   const clearCacheMutation = useMutation({
     mutationFn: () => clearCache(key!),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
   });
-
   const importMutation = useMutation({
     mutationFn: () => triggerImport(key!),
     onSuccess: (result) => {
@@ -62,18 +57,22 @@ export default function AdminScreen() {
     },
     onError: () => setConfirmingImport(false),
   });
-
   if (!key) {
     return (
       <View style={styles.container}>
-        <TextInput label="Admin key" value={input} onChangeText={setInput} secureTextEntry style={styles.input} />
+        <TextInput
+          label="Admin key"
+          value={input}
+          onChangeText={setInput}
+          secureTextEntry
+          style={styles.input}
+        />
         <Button mode="contained" onPress={() => setKey(input)}>
           Unlock admin portal
         </Button>
       </View>
     );
   }
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.headerRow}>
@@ -111,7 +110,9 @@ export default function AdminScreen() {
         <Card.Content>
           {confirmingImport ? (
             <View style={styles.confirmRow}>
-              <Text style={styles.confirmText}>Run the import now? This will overwrite existing schedule data.</Text>
+              <Text style={styles.confirmText}>
+                Run the import now? This will overwrite existing schedule data.
+              </Text>
               <View style={styles.confirmButtons}>
                 <Button
                   mode="contained"
@@ -122,7 +123,10 @@ export default function AdminScreen() {
                 >
                   Confirm import
                 </Button>
-                <Button disabled={importMutation.isPending} onPress={() => setConfirmingImport(false)}>
+                <Button
+                  disabled={importMutation.isPending}
+                  onPress={() => setConfirmingImport(false)}
+                >
                   Cancel
                 </Button>
               </View>
@@ -133,12 +137,21 @@ export default function AdminScreen() {
             </Button>
           )}
 
-          {importMutation.isError && <Text style={styles.errorText}>Import failed. Please try again.</Text>}
+          {importMutation.isError && (
+            <Text style={styles.errorText}>Import failed. Please try again.</Text>
+          )}
 
           {importMutation.data && (
-            <View style={[styles.resultBox, importMutation.data.success ? styles.resultSuccess : styles.resultFailure]}>
+            <View
+              style={[
+                styles.resultBox,
+                importMutation.data.success ? styles.resultSuccess : styles.resultFailure,
+              ]}
+            >
               <Text
-                style={importMutation.data.success ? styles.resultSuccessText : styles.resultFailureText}
+                style={
+                  importMutation.data.success ? styles.resultSuccessText : styles.resultFailureText
+                }
               >
                 {importMutation.data.message}
                 {'\n'}
@@ -151,7 +164,9 @@ export default function AdminScreen() {
 
       {healthQuery.data && (
         <Card style={styles.card}>
-          <Card.Title title={`Dataset Health — ${healthQuery.data.totalIssues} issue${healthQuery.data.totalIssues === 1 ? '' : 's'}`} />
+          <Card.Title
+            title={`Dataset Health — ${healthQuery.data.totalIssues} issue${healthQuery.data.totalIssues === 1 ? '' : 's'}`}
+          />
           <Card.Content>
             {HEALTH_CHECKS.map(({ key: countKey, samplesKey, label }) => {
               const count = healthQuery.data![countKey] as number;
@@ -182,11 +197,15 @@ export default function AdminScreen() {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
   input: { marginBottom: 12 },
-  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+  },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 16 },
   card: { marginBottom: 12 },
   noIssues: { padding: 12, opacity: 0.6 },

@@ -3,31 +3,41 @@ import { SectionList, View, StyleSheet } from 'react-native';
 import { Button, IconButton, List, Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useFavoritesStore } from './store';
-
 type FavoriteRow =
-  | { kind: 'train'; trainNumber: string }
-  | { kind: 'station'; stationCode: string }
-  | { kind: 'route'; from: string; to: string; key: string };
-
-/**
- * Mirrors train-db-frontend's /favorites page (FavoritesList): tap a row
- * to open it, per-row remove button, confirm-before-clear-all. Mobile's
- * favoritesStore only keeps codes (not names, unlike web's Favorite type)
- * - names would need an extra lookup per item to display, so rows show
- * the code as both title and navigation target; a reasonable trade-off
- * documented in favorites/store.ts, not a functional gap (still opens the
- * right train/station/journey).
- */
+  | {
+      kind: 'train';
+      trainNumber: string;
+    }
+  | {
+      kind: 'station';
+      stationCode: string;
+    }
+  | {
+      kind: 'route';
+      from: string;
+      to: string;
+      key: string;
+    };
 export default function FavoritesScreen() {
   const navigation = useNavigation<any>();
   const { trains, stations, routes, toggleTrain, toggleStation, toggleRoute } = useFavoritesStore();
   const [confirmingClear, setConfirmingClear] = useState(false);
-
   const total = trains.length + stations.length + routes.length;
-
-  const sections: { title: string; icon: string; data: FavoriteRow[] }[] = [
-    { title: 'Trains', icon: 'train', data: trains.map((t): FavoriteRow => ({ kind: 'train', trainNumber: t })) },
-    { title: 'Stations', icon: 'domain', data: stations.map((s): FavoriteRow => ({ kind: 'station', stationCode: s })) },
+  const sections: {
+    title: string;
+    icon: string;
+    data: FavoriteRow[];
+  }[] = [
+    {
+      title: 'Trains',
+      icon: 'train',
+      data: trains.map((t): FavoriteRow => ({ kind: 'train', trainNumber: t })),
+    },
+    {
+      title: 'Stations',
+      icon: 'domain',
+      data: stations.map((s): FavoriteRow => ({ kind: 'station', stationCode: s })),
+    },
     {
       title: 'Routes',
       icon: 'map-marker-path',
@@ -37,52 +47,58 @@ export default function FavoritesScreen() {
       }),
     },
   ];
-
   function rowTitle(row: FavoriteRow): string {
     if (row.kind === 'train') return row.trainNumber;
     if (row.kind === 'station') return row.stationCode;
     return `${row.from} → ${row.to}`;
   }
-
   function rowKey(row: FavoriteRow): string {
     if (row.kind === 'train') return `train-${row.trainNumber}`;
     if (row.kind === 'station') return `station-${row.stationCode}`;
     return `route-${row.key}`;
   }
-
   function openRow(row: FavoriteRow) {
     if (row.kind === 'train') {
-      navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber: row.trainNumber } });
+      navigation.navigate('TrainsTab', {
+        screen: 'TrainDetails',
+        params: { trainNumber: row.trainNumber },
+      });
     } else if (row.kind === 'station') {
-      navigation.navigate('StationsTab', { screen: 'StationDetails', params: { stationCode: row.stationCode } });
+      navigation.navigate('StationsTab', {
+        screen: 'StationDetails',
+        params: { stationCode: row.stationCode },
+      });
     } else {
-      navigation.navigate('JourneysTab', { screen: 'JourneySearch', params: { from: row.from, to: row.to } });
+      navigation.navigate('JourneysTab', {
+        screen: 'JourneySearch',
+        params: { from: row.from, to: row.to },
+      });
     }
   }
-
   function removeRow(row: FavoriteRow) {
     if (row.kind === 'train') toggleTrain(row.trainNumber);
     else if (row.kind === 'station') toggleStation(row.stationCode);
     else toggleRoute(row.key);
   }
-
   function clearAll() {
     trains.forEach(toggleTrain);
     stations.forEach(toggleStation);
     routes.forEach(toggleRoute);
     setConfirmingClear(false);
   }
-
   if (total === 0) {
     return (
       <View style={styles.empty}>
         <Text variant="titleMedium">No favorites yet</Text>
-        <Text style={styles.emptyDescription}>Save trains or stations from their detail pages to access them quickly here.</Text>
-        <Button onPress={() => navigation.navigate('TrainsTab', { screen: 'TrainSearch' })}>Browse trains</Button>
+        <Text style={styles.emptyDescription}>
+          Save trains or stations from their detail pages to access them quickly here.
+        </Text>
+        <Button onPress={() => navigation.navigate('TrainsTab', { screen: 'TrainSearch' })}>
+          Browse trains
+        </Button>
       </View>
     );
   }
-
   return (
     <View style={styles.container}>
       <View style={styles.clearRow}>
@@ -126,10 +142,15 @@ export default function FavoritesScreen() {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
-  clearRow: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', padding: 8, gap: 4 },
+  clearRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    padding: 8,
+    gap: 4,
+  },
   confirmText: { marginRight: 4 },
   sectionEmpty: { paddingHorizontal: 16, paddingBottom: 12, opacity: 0.5 },
   empty: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8, paddingHorizontal: 24 },

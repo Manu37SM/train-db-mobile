@@ -4,20 +4,14 @@ import { ActivityIndicator, Card, List } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { getRankings } from './api';
-
-/** Mirrors train-db-frontend's /rankings page (RankingsGrid). */
 export default function RankingsScreen() {
   const { data, isLoading } = useQuery({ queryKey: ['stats', 'rankings'], queryFn: getRankings });
   const navigation = useNavigation<any>();
-
   if (isLoading || !data) return <ActivityIndicator style={styles.loader} />;
-
   const openTrain = (trainNumber: string) =>
     navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber } });
-
   const openStation = (stationCode: string) =>
     navigation.navigate('StationsTab', { screen: 'StationDetails', params: { stationCode } });
-
   return (
     <ScrollView contentContainerStyle={styles.content}>
       <Section title="Most halts">
@@ -88,13 +82,6 @@ export default function RankingsScreen() {
     </ScrollView>
   );
 }
-
-// Each section used to be a bare title + stacked List.Items directly on
-// the screen background, so six sections in a row on one long scroll read
-// as a single undifferentiated list with no visual separation - reported
-// 2026-08-06 ("otherwise it looks like a long list"). A Card per section
-// gives each its own surface/elevation, same grouping web gets for free
-// from RankingsGrid's per-section bordered panels.
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card style={styles.section}>
@@ -103,7 +90,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </Card>
   );
 }
-
 const styles = StyleSheet.create({
   content: { padding: 16, gap: 16 },
   section: { gap: 4 },

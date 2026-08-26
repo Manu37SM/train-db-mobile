@@ -9,25 +9,16 @@ import { useHistoryStore } from '@/features/history/store';
 import { BRAND } from '@/theme/theme';
 import { usePreferencesStore, ThemePreference } from '@/store/preferencesStore';
 import { usePopularityStore, getPopularTrains, getPopularStations } from './popularityStore';
-
-// Mirrors train-db-frontend's navbar ThemeToggle (sun/moon/monitor,
-// cycling light -> dark -> system). Theme *could* only be changed from
-// Account > Settings on mobile - reported 2026-08-06 as "no utility to
-// change from dark to light" on the home page, so this puts the same
-// three-way toggle where the website keeps it: always-visible in the
-// header, not two navigations deep.
 const THEME_CYCLE: Record<ThemePreference, ThemePreference> = {
   light: 'dark',
   dark: 'system',
   system: 'light',
 };
-
 const THEME_ICON: Record<ThemePreference, string> = {
   light: 'weather-sunny',
   dark: 'weather-night',
   system: 'theme-light-dark',
 };
-
 function getGreeting() {
   const hour = new Date().getHours();
   if (hour < 12) return 'Good Morning';
@@ -35,30 +26,15 @@ function getGreeting() {
   if (hour < 21) return 'Good Evening';
   return 'Good Night';
 }
-
-/**
- * Mobile equivalent of train-db-frontend's / (Dashboard.tsx): QuickAccess
- * (favorites + recent), SearchActions, Explore, Popular, RailwayInsights -
- * same five sections, same destinations, just a native-app IA (first tab
- * instead of a page you land on at the root URL).
- *
- * Cross-tab navigation uses the parent bottom-tab navigator's nested
- * `navigate(tab, { screen })` form (untyped here - piping the full
- * MainTabParamList + every nested param list through this one screen
- * wasn't worth the type ceremony for what's essentially a set of
- * shortcuts; each target screen is still fully typed on its own stack).
- */
 export default function HomeScreen() {
   const navigation = useNavigation<any>();
   const { theme: themePreference, setTheme } = usePreferencesStore();
   const { trains, stations, routes } = useFavoritesStore();
   const { recent } = useHistoryStore();
-  usePopularityStore(); // subscribe so Popular section re-renders after a view is recorded elsewhere
-
+  usePopularityStore();
   const favoriteCount = trains.length + stations.length + routes.length;
   const popularTrains = getPopularTrains(5);
   const popularStations = getPopularStations(5);
-
   const searchActions: ActionGridItem[] = [
     {
       key: 'trains',
@@ -82,7 +58,6 @@ export default function HomeScreen() {
       onPress: () => navigation.navigate('StationsTab', { screen: 'StationSearch' }),
     },
   ];
-
   const exploreActions: ActionGridItem[] = [
     {
       key: 'browse-trains',
@@ -113,7 +88,6 @@ export default function HomeScreen() {
       onPress: () => navigation.navigate('ExploreTab', { screen: 'Stats' }),
     },
   ];
-
   const insightActions: ActionGridItem[] = [
     {
       key: 'network',
@@ -158,15 +132,8 @@ export default function HomeScreen() {
       onPress: () => navigation.navigate('ExploreTab', { screen: 'SmartSearch' }),
     },
   ];
-
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-      {/*
-        Mirrors train-db-frontend's DashboardHeader.tsx: orange greeting
-        badge, RailLens wordmark, favorite/recent stat cards, and the same
-        three primary CTAs (Search Trains as the filled/orange action,
-        Plan Journey and Explore Stations as outlined secondary actions).
-      */}
       <View style={styles.hero}>
         <Chip style={styles.greetingChip} textStyle={styles.greetingChipText} compact>
           👋 {getGreeting()}
@@ -187,7 +154,8 @@ export default function HomeScreen() {
           />
         </View>
         <Text style={styles.heroSubtitle}>
-          Your personal railway dashboard for searching trains, exploring stations and continuing your journeys.
+          Your personal railway dashboard for searching trains, exploring stations and continuing
+          your journeys.
         </Text>
 
         <View style={styles.statsRow}>
@@ -221,10 +189,18 @@ export default function HomeScreen() {
           >
             Search Trains
           </Button>
-          <Button mode="outlined" icon="map-marker-path" onPress={() => navigation.navigate('JourneysTab', { screen: 'JourneySearch' })}>
+          <Button
+            mode="outlined"
+            icon="map-marker-path"
+            onPress={() => navigation.navigate('JourneysTab', { screen: 'JourneySearch' })}
+          >
             Plan Journey
           </Button>
-          <Button mode="outlined" icon="domain" onPress={() => navigation.navigate('StationsTab', { screen: 'StationSearch' })}>
+          <Button
+            mode="outlined"
+            icon="domain"
+            onPress={() => navigation.navigate('StationsTab', { screen: 'StationSearch' })}
+          >
             Explore Stations
           </Button>
         </View>
@@ -232,10 +208,16 @@ export default function HomeScreen() {
 
       <Section title="Quick Access" description="Your saved items and recent activity.">
         <View style={styles.row}>
-          <Chip icon="star-outline" onPress={() => navigation.navigate('AccountTab', { screen: 'Favorites' })}>
+          <Chip
+            icon="star-outline"
+            onPress={() => navigation.navigate('AccountTab', { screen: 'Favorites' })}
+          >
             {favoriteCount} favorite{favoriteCount === 1 ? '' : 's'}
           </Chip>
-          <Chip icon="history" onPress={() => navigation.navigate('AccountTab', { screen: 'History' })}>
+          <Chip
+            icon="history"
+            onPress={() => navigation.navigate('AccountTab', { screen: 'History' })}
+          >
             {recent.length} recent search{recent.length === 1 ? '' : 'es'}
           </Chip>
         </View>
@@ -261,7 +243,12 @@ export default function HomeScreen() {
                   key={t.code}
                   title={t.name}
                   description={`${t.code} · viewed ${t.views}×`}
-                  onPress={() => navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber: t.code } })}
+                  onPress={() =>
+                    navigation.navigate('TrainsTab', {
+                      screen: 'TrainDetails',
+                      params: { trainNumber: t.code },
+                    })
+                  }
                 />
               ))
             )}
@@ -277,7 +264,12 @@ export default function HomeScreen() {
                   key={s.code}
                   title={s.name}
                   description={`${s.code} · viewed ${s.views}×`}
-                  onPress={() => navigation.navigate('StationsTab', { screen: 'StationDetails', params: { stationCode: s.code } })}
+                  onPress={() =>
+                    navigation.navigate('StationsTab', {
+                      screen: 'StationDetails',
+                      params: { stationCode: s.code },
+                    })
+                  }
                 />
               ))
             )}
@@ -291,8 +283,15 @@ export default function HomeScreen() {
     </ScrollView>
   );
 }
-
-function Section({ title, description, children }: { title: string; description: string; children: React.ReactNode }) {
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
   return (
     <View style={styles.section}>
       <Text variant="titleLarge">{title}</Text>
@@ -303,7 +302,6 @@ function Section({ title, description, children }: { title: string; description:
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1 },
   content: { padding: 16, gap: 24 },

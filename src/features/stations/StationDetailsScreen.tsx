@@ -8,48 +8,29 @@ import { getStation, getStationIntelligence } from './api';
 import { useFavoritesStore } from '@/features/favorites/store';
 import { usePopularityStore } from '@/features/home/popularityStore';
 import type { StationsStackParamList } from '@/navigation/types';
-
 type Props = NativeStackScreenProps<StationsStackParamList, 'StationDetails'>;
-
 type Filter = 'all' | 'originating' | 'terminating' | 'passing';
-
-/**
- * Mirrors train-db-frontend's /stations/[stationCode] page
- * (StationDetailsClient + StationTrainList): StationResponse is one flat
- * `trains` list with origin/destination boolean flags, not three separate
- * arrays - an earlier pass here assumed separate originating/terminating/
- * passing lists that don't exist on the backend. Fixed to filter the one
- * real list client-side, same as web's StationTrainList.
- */
 export default function StationDetailsScreen({ route }: Props) {
   const { stationCode } = route.params;
   const favorites = useFavoritesStore();
-  // Typed as `any`, matching the same cross-tab-navigate convention used by
-  // FavoritesScreen/JourneySearchScreen/HistoryScreen: this screen's own
-  // typed `navigation` prop only knows StationsStackParamList and can't
-  // type-check a navigate into the Trains tab's stack.
   const navigation = useNavigation<any>();
   const isFavorite = favorites.stations.includes(stationCode);
   const recordStationView = usePopularityStore((s) => s.recordStationView);
   const [filter, setFilter] = useState<Filter>('all');
-
   const stationQuery = useQuery({
     queryKey: ['stations', stationCode],
     queryFn: () => getStation(stationCode),
   });
-
   const intelligenceQuery = useQuery({
     queryKey: ['stations', stationCode, 'intelligence'],
     queryFn: () => getStationIntelligence(stationCode),
   });
-
   useEffect(() => {
     if (stationQuery.data) {
       recordStationView(stationQuery.data.stationCode, stationQuery.data.stationName);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stationQuery.data?.stationCode]);
-
   const counts = useMemo(() => {
     const trains = stationQuery.data?.trains ?? [];
     return {
@@ -59,7 +40,6 @@ export default function StationDetailsScreen({ route }: Props) {
       passing: trains.filter((t) => !t.origin && !t.destination).length,
     };
   }, [stationQuery.data]);
-
   const filteredTrains = useMemo(() => {
     const trains = stationQuery.data?.trains ?? [];
     switch (filter) {
@@ -73,14 +53,11 @@ export default function StationDetailsScreen({ route }: Props) {
         return trains;
     }
   }, [stationQuery.data, filter]);
-
   if (stationQuery.isLoading) return <ActivityIndicator style={styles.loader} />;
   if (stationQuery.isError || !stationQuery.data) {
     return <Text style={styles.error}>Could not load this station.</Text>;
   }
-
   const station = stationQuery.data;
-
   return (
     <ScrollView style={styles.container}>
       <View style={styles.header}>
@@ -105,13 +82,18 @@ export default function StationDetailsScreen({ route }: Props) {
             <Text>Degree: {intelligenceQuery.data.degree}</Text>
             <Text>
               Origin {intelligenceQuery.data.originPercent.toFixed(1)}% · Destination{' '}
-              {intelligenceQuery.data.destinationPercent.toFixed(1)}% · Transit {intelligenceQuery.data.transitPercent.toFixed(1)}%
+              {intelligenceQuery.data.destinationPercent.toFixed(1)}% · Transit{' '}
+              {intelligenceQuery.data.transitPercent.toFixed(1)}%
             </Text>
             <Text>Average halt: {intelligenceQuery.data.averageHaltMinutes.toFixed(1)} min</Text>
             {intelligenceQuery.data.averageTrainSpeedKmh != null && (
-              <Text>Average train speed: {intelligenceQuery.data.averageTrainSpeedKmh.toFixed(1)} km/h</Text>
+              <Text>
+                Average train speed: {intelligenceQuery.data.averageTrainSpeedKmh.toFixed(1)} km/h
+              </Text>
             )}
-            <Text>Importance score: {intelligenceQuery.data.stationImportanceScore.toFixed(2)}</Text>
+            <Text>
+              Importance score: {intelligenceQuery.data.stationImportanceScore.toFixed(2)}
+            </Text>
           </Card.Content>
         </Card>
       )}
@@ -128,7 +110,12 @@ export default function StationDetailsScreen({ route }: Props) {
                 { key: 'passing', label: 'Passing Through' },
               ] as const
             ).map((f) => (
-              <Chip key={f.key} selected={filter === f.key} onPress={() => setFilter(f.key)} style={styles.filterChip}>
+              <Chip
+                key={f.key}
+                selected={filter === f.key}
+                onPress={() => setFilter(f.key)}
+                style={styles.filterChip}
+              >
                 {f.label} ({counts[f.key]})
               </Chip>
             ))}
@@ -156,7 +143,6 @@ export default function StationDetailsScreen({ route }: Props) {
     </ScrollView>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },

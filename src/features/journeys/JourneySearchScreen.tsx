@@ -8,83 +8,55 @@ import { searchJourneys } from './api';
 import { useHistoryStore } from '@/features/history/store';
 import { usePreferencesStore } from '@/store/preferencesStore';
 import { StationAutocomplete } from '@/components/StationAutocomplete';
+import ExportButton from '@/components/ExportButton';
+import { toCsv } from '@/lib/csvExport';
 import type { JourneysStackParamList } from '@/navigation/types';
 import type { JourneyTrainResponse } from '@/types/api';
-
 type Props = NativeStackScreenProps<JourneysStackParamList, 'JourneySearch'>;
-
 type SortMode = 'fastest' | 'slowest';
-
-// Same fix/reasoning as train-db-frontend's JourneyResults.tsx: total
-// travel time (moving + halted), not the fixed track `distance` between
-// the two searched stations - every train in one result set shares that
-// same distance, so sorting by it is a no-op. See that file's comment for
-// the full "fastest first button doing nothing" history.
 function totalMinutes(train: JourneyTrainResponse): number {
   return train.movingMinutes + train.haltedMinutes;
 }
-
-/**
- * Mirrors train-db-frontend's /journeys page (JourneySearchForm +
- * JourneyResults / JourneyResultRow): direct trains, distance, total
- * travel time, and Journey Analysis fields (moving/halted time, avg speed,
- * night/day %), all from JourneyTrainResponse via GET /journeys. Each
- * result row opens that train's details, same as web's Link - there's no
- * "save" affordance here on web (that's TrainDetailsScreen's separate
- * "plan a partial journey" feature, see savedJourneys/), an earlier pass
- * of this screen incorrectly added one.
- *
- * `duration` and `distance` come pre-formatted/nullable straight off
- * JourneyTrainResponse (duration is a backend-formatted string, not a
- * number of minutes to reformat client-side).
- */
 export default function JourneySearchScreen({ route }: Props) {
   const navigation = useNavigation<any>();
   const defaultFromStationCode = usePreferencesStore((s) => s.defaultFromStationCode);
   const defaultFromStationName = usePreferencesStore((s) => s.defaultFromStationName);
-
-  // Optional from/to params let the Assistant (and any other deep link)
-  // jump straight to a journey search pre-filled, same as web's
-  // /journeys?from=&to= query string.
   const [from, setFrom] = useState(route.params?.from ?? defaultFromStationCode ?? '');
   const [to, setTo] = useState(route.params?.to ?? '');
-  // Display labels are tracked separately from the from/to codes used for
-  // the actual search, purely so handleSwap has something to show in each
-  // field immediately - StationAutocomplete (unlike web's, which exposes a
-  // setStation() ref method) owns its typed text as fully internal state
-  // with no imperative API to update it after mount, so swapping is done
-  // by changing each field's `key` (forcing a remount with a new
-  // `initialLabel`) rather than reaching into it.
   const [fromLabel, setFromLabel] = useState(
-    route.params?.from ?? (defaultFromStationCode && defaultFromStationName ? `${defaultFromStationCode} · ${defaultFromStationName}` : ''),
+    route.params?.from ??
+      (defaultFromStationCode && defaultFromStationName
+        ? `${defaultFromStationCode} · ${defaultFromStationName}`
+        : ''),
   );
   const [toLabel, setToLabel] = useState(route.params?.to ?? '');
   const [swapCount, setSwapCount] = useState(0);
   const [sortMode, setSortMode] = useState<SortMode>('fastest');
-  const [submitted, setSubmitted] = useState<{ from: string; to: string } | null>(
-    route.params?.from && route.params?.to ? { from: route.params.from, to: route.params.to } : null,
+  const [submitted, setSubmitted] = useState<{
+    from: string;
+    to: string;
+  } | null>(
+    route.params?.from && route.params?.to
+      ? { from: route.params.from, to: route.params.to }
+      : null,
   );
   const record = useHistoryStore((s) => s.record);
-
   const { data, isFetching, isError } = useQuery({
     queryKey: ['journeys', submitted?.from, submitted?.to],
     queryFn: () => searchJourneys(submitted!.from, submitted!.to),
     enabled: !!submitted,
   });
-
   const sortedTrains = useMemo(() => {
     if (!data) return [];
     const sorted = [...data.trains].sort((a, b) => totalMinutes(a) - totalMinutes(b));
     return sortMode === 'fastest' ? sorted : sorted.reverse();
   }, [data, sortMode]);
-
   const runSearch = () => {
     if (!from.trim() || !to.trim()) return;
     const query = { from: from.trim().toUpperCase(), to: to.trim().toUpperCase() };
     setSubmitted(query);
     record({ type: 'journey', query: `${query.from}-${query.to}` });
   };
-
   const handleSwap = () => {
     if (!from && !to) return;
     const nextFrom = to;
@@ -95,7 +67,6 @@ export default function JourneySearchScreen({ route }: Props) {
     setToLabel(fromLabel);
     setSwapCount((c) => c + 1);
   };
-
   return (
     <View style={styles.container}>
       <View style={styles.fieldRow}>
@@ -110,7 +81,13 @@ export default function JourneySearchScreen({ route }: Props) {
             }}
           />
         </View>
-        <IconButton icon="swap-vertical" mode="outlined" onPress={handleSwap} style={styles.swapButton} accessibilityLabel="Swap stations" />
+        <IconButton
+          icon="swap-vertical"
+          mode="outlined"
+          onPress={handleSwap}
+          style={styles.swapButton}
+          accessibilityLabel="Swap stations"
+        />
       </View>
       <StationAutocomplete
         key={`to-${swapCount}`}
@@ -127,21 +104,37 @@ export default function JourneySearchScreen({ route }: Props) {
 
       {isFetching && <ActivityIndicator style={styles.loader} />}
       {isError && <Text style={styles.error}>No journeys found between these stations.</Text>}
-      {data && data.trains.length === 0 && <Text style={styles.error}>No direct trains found between these stations.</Text>}
+      {data && data.trains.length === 0 && (
+        <Text style={styles.error}>No direct trains found between these stations.</Text>
+      )}
 
       {data && data.trains.length > 0 && (
         <View style={styles.sortRow}>
           <Text style={styles.resultCount}>
             {data.totalTrains} train{data.totalTrains === 1 ? '' : 's'} found
           </Text>
-          <Button
-            compact
-            mode="outlined"
-            icon="sort"
-            onPress={() => setSortMode((prev) => (prev === 'fastest' ? 'slowest' : 'fastest'))}
-          >
-            {sortMode === 'fastest' ? 'Fastest first' : 'Slowest first'}
-          </Button>
+          <View style={styles.sortRowActions}>
+            <ExportButton
+              filename={`journeys_${submitted?.from}_to_${submitted?.to}`}
+              csv={toCsv(sortedTrains, [
+                { key: 'trainNumber', header: 'Train Number' },
+                { key: 'trainName', header: 'Train Name' },
+                { key: 'departureTime', header: 'Departure' },
+                { key: 'arrivalTime', header: 'Arrival' },
+                { key: 'duration', header: 'Duration' },
+                { key: 'distance', header: 'Distance (km)' },
+                { key: 'numHalts', header: 'Halts' },
+              ])}
+            />
+            <Button
+              compact
+              mode="outlined"
+              icon="sort"
+              onPress={() => setSortMode((prev) => (prev === 'fastest' ? 'slowest' : 'fastest'))}
+            >
+              {sortMode === 'fastest' ? 'Fastest first' : 'Slowest first'}
+            </Button>
+          </View>
         </View>
       )}
 
@@ -151,16 +144,24 @@ export default function JourneySearchScreen({ route }: Props) {
         renderItem={({ item }) => (
           <Card
             style={styles.card}
-            onPress={() => navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber: item.trainNumber } })}
+            onPress={() =>
+              navigation.navigate('TrainsTab', {
+                screen: 'TrainDetails',
+                params: { trainNumber: item.trainNumber },
+              })
+            }
           >
             <Card.Title title={`${item.trainNumber} · ${item.trainName}`} />
             <Card.Content>
               <Text>
-                {item.departureTime ?? '—'} → {item.arrivalTime ?? '—'} · {item.duration} · {item.distance ?? '—'} km
+                {item.departureTime ?? '—'} → {item.arrivalTime ?? '—'} · {item.duration} ·{' '}
+                {item.distance ?? '—'} km
               </Text>
               <Text>
                 {item.numHalts} halt{item.numHalts === 1 ? '' : 's'}
-                {item.averageMovingSpeedKmh != null ? ` · ${item.averageMovingSpeedKmh.toFixed(1)} km/h avg` : ''}
+                {item.averageMovingSpeedKmh != null
+                  ? ` · ${item.averageMovingSpeedKmh.toFixed(1)} km/h avg`
+                  : ''}
               </Text>
               {item.nightTravelPercent != null && item.nightTravelPercent > 0 && (
                 <Text>{item.nightTravelPercent.toFixed(0)}% overnight</Text>
@@ -172,7 +173,6 @@ export default function JourneySearchScreen({ route }: Props) {
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 12 },
   fieldRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
@@ -182,6 +182,12 @@ const styles = StyleSheet.create({
   card: { marginBottom: 10 },
   loader: { marginTop: 16 },
   error: { textAlign: 'center', marginTop: 16, opacity: 0.7 },
-  sortRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 },
+  sortRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  sortRowActions: { flexDirection: 'row', alignItems: 'center' },
   resultCount: { opacity: 0.7, fontSize: 12 },
 });

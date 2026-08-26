@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
-
-/** Small label/value tile used across the Explore-tab stats screens. */
 export function StatCard({ label, value }: { label: string; value: string | number }) {
   return (
     <View style={styles.card}>
@@ -11,7 +9,6 @@ export function StatCard({ label, value }: { label: string; value: string | numb
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   card: {
     flexBasis: '47%',

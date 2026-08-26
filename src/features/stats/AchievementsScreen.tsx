@@ -4,29 +4,21 @@ import { ActivityIndicator, Card, List } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigation } from '@react-navigation/native';
 import { getAchievements } from './api';
-
-/**
- * Mirrors train-db-frontend's /achievements page (AchievementsGrid). Web
- * shows the full top-100 lists; mobile caps the initial render to the top
- * 20 per section to keep the screen scannable on a small screen without a
- * separate pagination UI - same data source, same ordering, just a
- * shorter default slice (a "show more" control is a reasonable follow-up,
- * not a data gap).
- */
 const PREVIEW_COUNT = 20;
-
 export default function AchievementsScreen() {
-  const { data, isLoading } = useQuery({ queryKey: ['stats', 'achievements'], queryFn: getAchievements });
+  const { data, isLoading } = useQuery({
+    queryKey: ['stats', 'achievements'],
+    queryFn: getAchievements,
+  });
   const navigation = useNavigation<any>();
-
   if (isLoading || !data) return <ActivityIndicator style={styles.loader} />;
-
   const openTrain = (trainNumber: string) =>
     navigation.navigate('TrainsTab', { screen: 'TrainDetails', params: { trainNumber } });
-
   return (
     <ScrollView contentContainerStyle={styles.content}>
-      <Section title={`Longest routes (top ${Math.min(PREVIEW_COUNT, data.longestRoutes.length)} of ${data.longestRoutes.length})`}>
+      <Section
+        title={`Longest routes (top ${Math.min(PREVIEW_COUNT, data.longestRoutes.length)} of ${data.longestRoutes.length})`}
+      >
         {data.longestRoutes.slice(0, PREVIEW_COUNT).map((r) => (
           <List.Item
             key={r.trainNumber}
@@ -37,7 +29,9 @@ export default function AchievementsScreen() {
         ))}
       </Section>
 
-      <Section title={`Fastest trains (top ${Math.min(PREVIEW_COUNT, data.fastestTrains.length)} of ${data.fastestTrains.length})`}>
+      <Section
+        title={`Fastest trains (top ${Math.min(PREVIEW_COUNT, data.fastestTrains.length)} of ${data.fastestTrains.length})`}
+      >
         {data.fastestTrains.slice(0, PREVIEW_COUNT).map((t) => (
           <List.Item
             key={t.trainNumber}
@@ -94,8 +88,6 @@ export default function AchievementsScreen() {
     </ScrollView>
   );
 }
-
-// Same fix as RankingsScreen's Section - see that file's comment.
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Card style={styles.section}>
@@ -104,7 +96,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
     </Card>
   );
 }
-
 const styles = StyleSheet.create({
   content: { padding: 16, gap: 16 },
   section: { gap: 4 },

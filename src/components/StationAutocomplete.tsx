@@ -4,13 +4,6 @@ import { List, TextInput } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import { searchStations } from '@/features/stations/api';
 import type { StationSearchResponse } from '@/types/api';
-
-/**
- * Mirrors train-db-frontend/components/common/StationAutocomplete.tsx:
- * type-ahead over GET /stations/search, same endpoint, no local dataset
- * duplication. Used by JourneySearchScreen's From/To fields and
- * AccountScreen's default-from-station preference.
- */
 export function StationAutocomplete({
   label,
   initialLabel,
@@ -22,13 +15,11 @@ export function StationAutocomplete({
 }) {
   const [query, setQuery] = useState(initialLabel ?? '');
   const [focused, setFocused] = useState(false);
-
   const { data } = useQuery({
     queryKey: ['stations', 'search', query],
     queryFn: () => searchStations(query),
     enabled: focused && query.trim().length > 0,
   });
-
   return (
     <View style={styles.container}>
       <TextInput
@@ -60,7 +51,6 @@ export function StationAutocomplete({
     </View>
   );
 }
-
 const styles = StyleSheet.create({
   container: { marginBottom: 8 },
   dropdown: { borderWidth: StyleSheet.hairlineWidth, borderColor: '#8884', borderRadius: 4 },
