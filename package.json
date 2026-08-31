@@ -31,7 +31,7 @@
     "react-native-screens": "^4.20.0",
     "react-native-vector-icons": "^10.3.0",
     "zod": "^4.1.11",
-    "zustand": "^5.0.8"
+    "zustand": "^5.0.15"
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
