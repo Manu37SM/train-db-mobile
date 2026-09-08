@@ -28,7 +28,7 @@
     "react-native-mmkv": "^4.3.2",
     "react-native-paper": "^5.14.5",
     "react-native-safe-area-context": "^5.9.1",
-    "react-native-screens": "^4.20.0",
+    "react-native-screens": "^4.27.0",
     "react-native-vector-icons": "^10.3.0",
     "zod": "^4.1.11",
     "zustand": "^5.0.15"
