@@ -54,7 +54,7 @@
     "patch-package": "^8.0.1",
     "prettier": "^3.4.0",
     "react-test-renderer": "19.2.8",
-    "typescript": "^5.9.0"
+    "typescript": "^7.0.2"
   },
   "engines": {
     "node": ">=20"
