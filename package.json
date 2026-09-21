@@ -30,7 +30,7 @@
     "react-native-safe-area-context": "^5.9.1",
     "react-native-screens": "^4.27.0",
     "react-native-vector-icons": "^10.3.0",
-    "zod": "^4.1.11",
+    "zod": "^4.6.5",
     "zustand": "^5.0.15"
   },
   "devDependencies": {
