@@ -52,7 +52,7 @@
     "eslint": "^10.10.0",
     "jest": "^30.5.0",
     "patch-package": "^8.0.1",
-    "prettier": "^3.4.0",
+    "prettier": "^3.9.8",
     "react-test-renderer": "19.2.8",
     "typescript": "^5.9.0"
   },
