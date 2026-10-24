@@ -93,10 +93,10 @@ export default function RegisterScreen({ navigation }: Props) {
         mode="contained"
         buttonColor={BRAND.accent}
         loading={mutation.isPending}
-        onPress={handleSubmit((values) => {
+        onPress={() => handleSubmit((values) => {
           setServerError(null);
           mutation.mutate(values);
-        })}
+        })()}
         style={styles.button}
       >
         Create account

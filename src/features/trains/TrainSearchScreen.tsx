@@ -67,7 +67,7 @@ export default function TrainSearchScreen({ navigation }: Props) {
         ListEmptyComponent={
           !isFetching && query.trim().length > 0 ? (
             <Text style={styles.empty}>No trains found for "{query}".</Text>
-          ) : null
+          ) : undefined
         }
       />
     </View>

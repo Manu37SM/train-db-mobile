@@ -69,7 +69,7 @@ export default function StationSearchScreen({ navigation }: Props) {
         ListEmptyComponent={
           !isFetching && query.trim().length > 0 ? (
             <Text style={styles.empty}>No stations found for "{query}".</Text>
-          ) : null
+          ) : undefined
         }
       />
     </View>
