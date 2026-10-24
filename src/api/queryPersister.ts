@@ -1,11 +1,13 @@
-import { MMKV } from 'react-native-mmkv';
+import { createMMKV } from 'react-native-mmkv';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
-const queryCacheStorage = new MMKV({ id: 'raillens-query-cache' });
+const queryCacheStorage = createMMKV({ id: 'raillens-query-cache' });
 export const queryPersister = createAsyncStoragePersister({
   storage: {
     getItem: (key) => queryCacheStorage.getString(key) ?? null,
     setItem: (key, value) => queryCacheStorage.set(key, value),
-    removeItem: (key) => queryCacheStorage.delete(key),
+    removeItem: (key) => {
+      queryCacheStorage.remove(key);
+    },
   },
   key: 'RAILLENS_QUERY_CACHE',
 });

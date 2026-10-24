@@ -18,3 +18,5 @@ android/keystore.properties
 android/app/*.keystore
 !android/app/debug.keystore
 android/app/*.jks
+# CMake staging dir created when building on non-Windows
+android/app/C:/

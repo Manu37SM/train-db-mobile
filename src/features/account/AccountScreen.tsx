@@ -240,10 +240,10 @@ function ChangePasswordSection() {
         mode="contained"
         buttonColor={BRAND.accent}
         loading={mutation.isPending}
-        onPress={handleSubmit((values) => {
+        onPress={() => handleSubmit((values) => {
           setSuccess(false);
           mutation.mutate(values);
-        })}
+        })()}
         style={styles.authAction}
       >
         {mutation.isPending ? 'Saving...' : 'Change password'}
@@ -314,7 +314,7 @@ function DeleteAccountSection({ onDeleted }: { onDeleted: () => Promise<void> })
               mode="contained"
               buttonColor="#dc2626"
               loading={mutation.isPending}
-              onPress={handleSubmit((values) => mutation.mutate(values))}
+              onPress={() => handleSubmit((values) => mutation.mutate(values))()}
               style={styles.rowButton}
             >
               Confirm delete
