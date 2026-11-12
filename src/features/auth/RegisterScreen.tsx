@@ -6,7 +6,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useMutation } from '@tanstack/react-query';
 import { register as registerRequest } from './api';
 import { getApiErrorMessage } from '@/lib/apiError';
-import { registerSchema, RegisterFormValues } from './schemas';
+import { railOpsRegisterSchema, registerSchema, RegisterFormValues } from './schemas';
+import { LOGIN_PROVIDER } from '@/config/login';
 import { useAuthStore } from '@/store/authStore';
 import { toStoredSession } from '@/lib/secureStorage';
 import { useToastStore } from '@/store/toastStore';
@@ -15,8 +16,23 @@ import type { AuthNavigation } from '@/navigation/types';
 interface Props {
   navigation: AuthNavigation;
 }
+type Field = 'username' | 'email' | 'phone' | 'password' | 'confirmPassword';
+/** RailOps login (Phase 4D): a phone number instead of a username. */
+const RAILOPS = LOGIN_PROVIDER === 'railops';
+const FIELDS: readonly Field[] = RAILOPS
+  ? ['email', 'phone', 'password', 'confirmPassword']
+  : ['username', 'email', 'password', 'confirmPassword'];
+const LABELS: Record<Field, string> = {
+  username: 'username',
+  email: 'email',
+  phone: 'phone number',
+  password: RAILOPS ? 'password (10+ characters)' : 'password',
+  confirmPassword: 'Confirm password',
+};
+/** Both schemas validate the same form; only the fields differ. */
+type FormValues = RegisterFormValues & { phone?: string };
 const AUTOFILL: Record<
-  'username' | 'email' | 'password' | 'confirmPassword',
+  Field,
   {
     textContentType: React.ComponentProps<typeof TextInput>['textContentType'];
     autoComplete: React.ComponentProps<typeof TextInput>['autoComplete'];
@@ -25,6 +41,7 @@ const AUTOFILL: Record<
 > = {
   username: { textContentType: 'username', autoComplete: 'username' },
   email: { textContentType: 'emailAddress', autoComplete: 'email', keyboardType: 'email-address' },
+  phone: { textContentType: 'telephoneNumber', autoComplete: 'tel', keyboardType: 'phone-pad' },
   password: { textContentType: 'newPassword', autoComplete: 'password-new' },
   confirmPassword: { textContentType: 'newPassword', autoComplete: 'password-new' },
 };
@@ -35,10 +52,16 @@ export default function RegisterScreen({ navigation }: Props) {
     control,
     handleSubmit,
     formState: { errors },
-  } = useForm<RegisterFormValues>({ resolver: zodResolver(registerSchema) });
+  } = useForm<FormValues>({
+    resolver: zodResolver((RAILOPS ? railOpsRegisterSchema : registerSchema) as typeof registerSchema),
+  });
   const mutation = useMutation({
-    mutationFn: (values: RegisterFormValues) =>
-      registerRequest(values.username, values.email, values.password),
+    mutationFn: (values: FormValues) =>
+      registerRequest(
+        RAILOPS
+          ? { email: values.email, phone: values.phone, password: values.password }
+          : { username: values.username, email: values.email, password: values.password },
+      ),
     onSuccess: async (data) => {
       await setSession(toStoredSession(data));
       useToastStore.getState().show(`Account created. Welcome, ${data.username}.`);
@@ -48,7 +71,9 @@ export default function RegisterScreen({ navigation }: Props) {
       setServerError(
         getApiErrorMessage(
           error,
-          'Could not create account. Username or email may already be taken.',
+          RAILOPS
+            ? 'Could not create account. The email or phone number may already be in use.'
+            : 'Could not create account. Username or email may already be taken.',
         ),
       ),
   });
@@ -58,14 +83,14 @@ export default function RegisterScreen({ navigation }: Props) {
         Create your account
       </Text>
 
-      {(['username', 'email', 'password', 'confirmPassword'] as const).map((name) => (
+      {FIELDS.map((name) => (
         <View key={name}>
           <Controller
             control={control}
             name={name}
             render={({ field }) => (
               <TextInput
-                label={name === 'confirmPassword' ? 'Confirm password' : name}
+                label={LABELS[name]}
                 secureTextEntry={name.toLowerCase().includes('password')}
                 autoCapitalize="none"
                 autoCorrect={false}

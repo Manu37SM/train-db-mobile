@@ -89,6 +89,23 @@ instead of the live deployment (Android emulator reaches the host via
 `10.0.2.2`). `.env.example` documents the same values for when
 react-native-config gets wired up later (deliberately deferred for now).
 
+### Single login (Phase 4D): `src/config/login.ts`
+
+`LOGIN_PROVIDER` chooses who handles sign-in. It is built into the APK, so changing it means building a new one.
+
+- `'raillens'` (default): RailLens' own accounts, exactly as before.
+- `'railops'`: the RailOps login shared with the website. `src/features/auth/railops.ts` signs in at RailOps
+  (`RAILOPS_BASE_URL`, the gateway; app endpoints that return the refresh token in the body), then asks the RailLens
+  backend's `/auth/me` for the profile and admin role. Tokens stay in the Keychain as before.
+  - Sign in with **email**. Registration asks for a **phone number** instead of a username; passwords need **10+
+    characters**. Staff admins tap "Staff? Add your one-time code" and send it with the password; MFA setup happens
+    in the RailOps staff app.
+  - Change password and delete account are unchanged: RailLens forwards them to RailOps for linked accounts.
+  - Each saved session remembers which login issued it. After an update that switches login, the old tokens are
+    dropped (never sent to the other service) and the person signs in once more.
+
+Switch it only after the website has switched (`DEPLOYMENT.md` Section 9b). Rollback: set `'raillens'`, build a new APK.
+
 ## Running on your own phone (Android)
 
 1. Complete the native-folder bootstrap above once.

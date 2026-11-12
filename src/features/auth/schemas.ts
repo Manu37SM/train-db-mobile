@@ -1,4 +1,7 @@
 import { z } from 'zod';
+import { LOGIN_PROVIDER } from '@/config/login';
+/** The RailOps login (Phase 4D) asks for 10+ characters. */
+const NEW_PASSWORD_MIN = LOGIN_PROVIDER === 'railops' ? 10 : 8;
 export const loginSchema = z.object({
   usernameOrEmail: z.string().min(1, 'Username or email is required'),
   password: z.string().min(1, 'Password is required'),
@@ -16,12 +19,25 @@ export const registerSchema = z
     path: ['confirmPassword'],
   });
 export type RegisterFormValues = z.infer<typeof registerSchema>;
+/** RailOps login (Phase 4D): no username (made from the email), a phone number, 10+ character passwords. */
+export const railOpsRegisterSchema = z
+  .object({
+    email: z.email('Enter a valid email'),
+    phone: z.string().trim().regex(/^\+?[0-9 -]{10,16}$/, 'Enter a phone number of 10 to 16 digits'),
+    password: z.string().min(10, 'At least 10 characters').max(128, 'At most 128 characters'),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'Passwords do not match',
+    path: ['confirmPassword'],
+  });
+export type RailOpsRegisterFormValues = z.infer<typeof railOpsRegisterSchema>;
 const PASSWORD_PATTERN = /^(?=.*[A-Za-z])(?=.*\d).+$/;
 export const changePasswordSchema = z.object({
   currentPassword: z.string().min(1, 'Current password is required'),
   newPassword: z
     .string()
-    .min(8, 'At least 8 characters')
+    .min(NEW_PASSWORD_MIN, `At least ${NEW_PASSWORD_MIN} characters`)
     .regex(PASSWORD_PATTERN, 'Must contain at least one letter and one number'),
 });
 export type ChangePasswordFormValues = z.infer<typeof changePasswordSchema>;

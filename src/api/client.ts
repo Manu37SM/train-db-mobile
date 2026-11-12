@@ -1,5 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/config/env';
+import { LOGIN_PROVIDER } from '@/config/login';
+import { refresh as railOpsRefresh } from '@/features/auth/railops';
 import { getAuthSession, useAuthStore } from '@/store/authStore';
 import { getJwtExpiryMillis } from '@/lib/jwt';
 import { toStoredSession } from '@/lib/secureStorage';
@@ -13,14 +15,19 @@ async function refreshAccessToken(): Promise<string | null> {
   const session = getAuthSession();
   if (!session?.refreshToken) return null;
   if (!refreshPromise) {
-    refreshPromise = axios
-      .post<AuthResponse>(`${API_BASE_URL}/auth/refresh`, {
-        refreshToken: session.refreshToken,
-      })
-      .then(async (res) => {
+    const refreshed: Promise<AuthResponse> =
+      LOGIN_PROVIDER === 'railops'
+        ? railOpsRefresh(session.refreshToken, session)
+        : axios
+            .post<AuthResponse>(`${API_BASE_URL}/auth/refresh`, {
+              refreshToken: session.refreshToken,
+            })
+            .then((res) => res.data);
+    refreshPromise = refreshed
+      .then(async (data) => {
         // The server re-reads the role on refresh: a demoted admin drops to USER here.
-        await useAuthStore.getState().setSession(toStoredSession(res.data));
-        return res.data.token;
+        await useAuthStore.getState().setSession(toStoredSession(data));
+        return data.token;
       })
       .catch(async () => {
         await useAuthStore.getState().logout();

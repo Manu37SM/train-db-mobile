@@ -1,15 +1,33 @@
 import { apiClient } from '@/api/client';
+import { LOGIN_PROVIDER } from '@/config/login';
+import * as railOps from './railops';
 import type { AuthResponse, CurrentUserResponse, MfaEnrolmentResponse } from '@/types/api';
-export async function register(username: string, email: string, password: string) {
+/** RailLens login: username + email. RailOps login (Phase 4D): email + phone; the username is made from the email. */
+export interface RegisterValues {
+  username?: string;
+  email: string;
+  phone?: string;
+  password: string;
+}
+export async function register(values: RegisterValues) {
+  if (LOGIN_PROVIDER === 'railops') {
+    return railOps.register(values.email, values.phone ?? '', values.password);
+  }
   const { data } = await apiClient.post<AuthResponse>('/auth/register', {
-    username,
-    email,
-    password,
+    username: values.username,
+    email: values.email,
+    password: values.password,
   });
   return data;
 }
-/** otp: 6-digit authenticator code, only for admin accounts (after the server answers MFA_REQUIRED). */
+/**
+ * otp: 6-digit authenticator code, only for admin accounts (RailLens login: after the server answers MFA_REQUIRED;
+ * RailOps login: staff send it with the password).
+ */
 export async function login(usernameOrEmail: string, password: string, otp?: string) {
+  if (LOGIN_PROVIDER === 'railops') {
+    return railOps.login(usernameOrEmail, password, otp);
+  }
   const { data } = await apiClient.post<AuthResponse>('/auth/login', {
     usernameOrEmail,
     password,
@@ -28,6 +46,10 @@ export async function confirmMfaEnrolment(enrolmentToken: string, otp: string) {
   return data;
 }
 export async function logout(refreshToken: string) {
+  if (LOGIN_PROVIDER === 'railops') {
+    await railOps.logout(refreshToken);
+    return;
+  }
   await apiClient.post('/auth/logout', { refreshToken });
 }
 export async function getCurrentUser() {
