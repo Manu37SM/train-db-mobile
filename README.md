@@ -1,5 +1,7 @@
 # RailLens Mobile
 
+> **Going live?** Follow [`DEPLOYMENT.md`](DEPLOYMENT.md): one step-by-step guide for the backend, website, Android app and RailOps, with a tracker of what's merged vs. live.
+
 React Native (CLI, bare, TypeScript) client for RailLens. Not a companion app —
 every feature in train-db-frontend has a home here too, reusing the same
 train-db REST API. See ../MOBILE_FEATURE_PARITY.md for the full checklist and
@@ -76,21 +78,7 @@ fully aligned — not required to run).
 
 ## Deploying the backend (do this first)
 
-The app defaults to a **live backend URL**, not localhost — a real phone is
-a separate device from your dev machine and can't reach `localhost`/
-`10.0.2.2` at all. `train-db/Dockerfile` and `train-db/render.yaml` are
-already prepared for a one-click Render deploy:
-
-1. Push this repo to GitHub/GitLab if it isn't already (Render deploys from a repo).
-2. In the [Render dashboard](https://dashboard.render.com), New → Blueprint → pick this repo → Render reads `train-db/render.yaml` automatically.
-3. When prompted for `RAILLENS_CORS_ALLOWED_ORIGINS` (a `sync: false` var Render will ask for at apply-time), enter your web frontend's URL if it's deployed, or `http://localhost:3000` as a placeholder if not — CORS only affects browser requests; it doesn't affect the mobile app at all, so this doesn't block mobile.
-4. Click Apply. Render provisions the Postgres DB + web service and gives you a URL like `https://raillens-train-db.onrender.com`.
-5. Once it's up, hit `https://<your-url>/actuator/health` in a browser — should return `{"status":"UP"}`.
-6. Update `src/config/env.ts`'s `LIVE_BASE_URL` constant to `https://<your-url>/api/v1`.
-
-Note: Render's free plan spins down after inactivity — the first request
-after idling can take ~30-60s to wake up. That's a Render behavior, not a
-mobile app bug, if a first launch feels slow.
+The app talks to the live backend (`src/config/env.ts`), so the backend must be deployed before the app is useful on a real phone. The full, current steps (Render + Neon) are in [`DEPLOYMENT.md`](DEPLOYMENT.md), Sections 6 and 8. Render's free plan sleeps when idle, so the first request after a while can take up to a minute.
 
 ## Configuration
 
@@ -179,6 +167,6 @@ missing). Every other file in `src/` was re-checked against backend source
 or its web equivalent and found correct - see `MOBILE_AUDIT.md` for the
 full "reviewed, no issue" list.
 
-## Backend is not deployed yet
+## Release status
 
-`src/config/env.ts`'s `LIVE_BASE_URL` is a placeholder until the "Deploying the backend" section above is completed.
+See the release tracker in [`DEPLOYMENT.md`](DEPLOYMENT.md), Section 2.
