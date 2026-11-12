@@ -106,6 +106,19 @@ react-native-config gets wired up later (deliberately deferred for now).
 
 Switch it only after the website has switched (`DEPLOYMENT.md` Section 9b). Rollback: set `'raillens'`, build a new APK.
 
+### Booking (Phase 5B): `BOOKING_ENABLED` in `src/config/login.ts`
+
+With `BOOKING_ENABLED = true` **and** `LOGIN_PROVIDER = 'railops'`, the app sells RailOps tickets (same API as the website):
+
+- **Train screen → Book this train:** date chips for the next 14 days; stations default to the whole route, or the
+  stops picked with "Select stops". RailLens station codes are matched to RailOps stop numbers. Seats per class.
+- **Book:** up to 6 passengers and a mobile number, then "Hold seats for 10 minutes" (one idempotency key per attempt).
+- **Booking:** PNR, fare, hold timer, **Pay (simulated)** (no money moves) then it waits for *Booked*; cancel with a
+  refund preview. **Account → My bookings** lists them.
+- Bookings, the signed-in profile and admin data are no longer written to the offline query cache (plain storage);
+  public train data still is. A failed token refresh signs the person out only when the server refused it, not on a
+  timeout or a sleeping server.
+
 ## Running on your own phone (Android)
 
 1. Complete the native-folder bootstrap above once.

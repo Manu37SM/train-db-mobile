@@ -25,6 +25,7 @@ import { usePopularSearchStore } from '@/features/home/popularSearchStore';
 import { useToastStore } from '@/store/toastStore';
 import { StationAutocomplete } from '@/components/StationAutocomplete';
 import { BRAND } from '@/theme/theme';
+import { bookingEnabled } from '@/features/booking/config';
 import type { AccountStackParamList } from '@/navigation/types';
 type Props = NativeStackScreenProps<AccountStackParamList, 'Account'>;
 export default function AccountScreen({ navigation }: Props) {
@@ -140,6 +141,13 @@ export default function AccountScreen({ navigation }: Props) {
 
       <Divider style={styles.divider} />
 
+      {bookingEnabled() && session && (
+        <List.Item
+          title="My bookings"
+          left={(p) => <List.Icon {...p} icon="ticket-outline" />}
+          onPress={() => navigation.navigate('Bookings')}
+        />
+      )}
       <List.Item
         title="Favorites"
         left={(p) => <List.Icon {...p} icon="star-outline" />}

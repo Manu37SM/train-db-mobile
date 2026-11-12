@@ -3,7 +3,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { PaperProvider } from 'react-native-paper';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { queryClient } from '@/api/queryClient';
-import { queryPersister, QUERY_PERSIST_MAX_AGE } from '@/api/queryPersister';
+import { queryPersister, QUERY_PERSIST_MAX_AGE, shouldPersistQuery } from '@/api/queryPersister';
 import { lightTheme, darkTheme } from '@/theme/theme';
 import { useResolvedTheme } from '@/theme/useResolvedTheme';
 import RootNavigator from '@/navigation/RootNavigator';
@@ -14,7 +14,11 @@ export default function App() {
   return (
     <PersistQueryClientProvider
       client={queryClient}
-      persistOptions={{ persister: queryPersister, maxAge: QUERY_PERSIST_MAX_AGE }}
+      persistOptions={{
+        persister: queryPersister,
+        maxAge: QUERY_PERSIST_MAX_AGE,
+        dehydrateOptions: { shouldDehydrateQuery: shouldPersistQuery },
+      }}
     >
       <SafeAreaProvider>
         <PaperProvider theme={theme}>

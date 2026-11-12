@@ -10,3 +10,14 @@ export type LoginProvider = 'raillens' | 'railops';
 export const LOGIN_PROVIDER = 'raillens' as LoginProvider;
 /** The RailOps gateway. Only used when LOGIN_PROVIDER is 'railops'. */
 export const RAILOPS_BASE_URL = 'https://railops-gateway.onrender.com';
+
+/**
+ * Booking (Phase 5B): book RailOps tickets in the app. Needs LOGIN_PROVIDER = 'railops' too, because RailOps only
+ * accepts its own sign-in. Built into the APK. Turn on after the website's booking works (DEPLOYMENT.md Section 9c).
+ */
+export const BOOKING_ENABLED = false as boolean;
+/**
+ * Only for a real payment gateway later: https hosts its checkout may be on. Empty for the demo, which uses
+ * RailOps' simulated payment and never opens a checkout page.
+ */
+export const RAILOPS_PAYMENT_HOSTS: readonly string[] = [];

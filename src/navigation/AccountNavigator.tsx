@@ -8,6 +8,8 @@ import AdminScreen from '@/features/admin/AdminScreen';
 import DevelopersScreen from '@/features/developers/DevelopersScreen';
 import LoginScreen from '@/features/auth/LoginScreen';
 import RegisterScreen from '@/features/auth/RegisterScreen';
+import BookingsScreen from '@/features/booking/BookingsScreen';
+import BookingScreen from '@/features/booking/BookingScreen';
 import type { AccountStackParamList } from './types';
 const Stack = createNativeStackNavigator<AccountStackParamList>();
 export default function AccountNavigator() {
@@ -27,6 +29,8 @@ export default function AccountNavigator() {
         component={DevelopersScreen}
         options={{ title: 'Developers' }}
       />
+      <Stack.Screen name="Bookings" component={BookingsScreen} options={{ title: 'My bookings' }} />
+      <Stack.Screen name="Booking" component={BookingScreen} options={{ title: 'Booking' }} />
       <Stack.Screen name="Login" component={LoginScreen} options={{ title: 'Sign in' }} />
       <Stack.Screen
         name="Register"
