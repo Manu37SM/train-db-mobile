@@ -1,27 +1,19 @@
 import { apiClient } from '@/api/client';
 import type { AdminStatsResponse, DatasetHealthResponse, ImportResult } from '@/types/api';
-function withAdminKey(adminKey: string) {
-  return { headers: { 'X-Admin-Key': adminKey } };
-}
-export async function getAdminStats(adminKey: string) {
-  const { data } = await apiClient.get<AdminStatsResponse>('/admin/stats', withAdminKey(adminKey));
+// Admin calls carry the signed-in admin's own bearer token (added by apiClient, refreshed when it nears expiry:
+// admin tokens last 15 minutes). The shared X-Admin-Key is gone.
+export async function getAdminStats() {
+  const { data } = await apiClient.get<AdminStatsResponse>('/admin/stats');
   return data;
 }
-export async function getDatasetHealth(adminKey: string) {
-  const { data } = await apiClient.get<DatasetHealthResponse>(
-    '/admin/health',
-    withAdminKey(adminKey),
-  );
+export async function getDatasetHealth() {
+  const { data } = await apiClient.get<DatasetHealthResponse>('/admin/health');
   return data;
 }
-export async function clearCache(adminKey: string) {
-  await apiClient.post('/admin/cache/clear', null, withAdminKey(adminKey));
+export async function clearCache() {
+  await apiClient.post('/admin/cache/clear', null);
 }
-export async function triggerImport(adminKey: string) {
-  const { data } = await apiClient.post<ImportResult>(
-    '/admin/import',
-    null,
-    withAdminKey(adminKey),
-  );
+export async function triggerImport() {
+  const { data } = await apiClient.post<ImportResult>('/admin/import', null);
   return data;
 }

@@ -1,15 +1,29 @@
+export type UserRole = 'USER' | 'ADMIN';
 export interface AuthResponse {
-  token: string;
+  /** null when mfaEnrolmentRequired: no session until the admin sets up an authenticator app. */
+  token: string | null;
   tokenType: string;
   expiresInSeconds: number;
-  refreshToken: string;
+  refreshToken: string | null;
   username: string;
   email: string;
+  /** Absent from servers older than Phase 2A. */
+  role?: UserRole;
+  mfaEnrolmentRequired?: boolean;
+  enrolmentToken?: string;
+}
+export interface MfaEnrolmentResponse {
+  /** base32 setup key for typing into an authenticator app */
+  secret: string;
+  /** otpauth:// link that opens the authenticator app */
+  otpauthUri: string;
 }
 export interface CurrentUserResponse {
   username: string;
   email: string;
   createdAt: string | null;
+  role?: UserRole;
+  mfaEnabled?: boolean;
 }
 export interface Page<T> {
   content: T[];
@@ -294,4 +308,6 @@ export interface ApiErrorResponse {
   timestamp: string;
   status: number;
   error: string;
+  /** Stable reason for errors the app reacts to, e.g. MFA_REQUIRED. */
+  code?: string;
 }

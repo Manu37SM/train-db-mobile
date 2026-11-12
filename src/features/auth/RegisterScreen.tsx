@@ -8,6 +8,7 @@ import { register as registerRequest } from './api';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { registerSchema, RegisterFormValues } from './schemas';
 import { useAuthStore } from '@/store/authStore';
+import { toStoredSession } from '@/lib/secureStorage';
 import { useToastStore } from '@/store/toastStore';
 import { BRAND } from '@/theme/theme';
 import type { AuthNavigation } from '@/navigation/types';
@@ -39,7 +40,7 @@ export default function RegisterScreen({ navigation }: Props) {
     mutationFn: (values: RegisterFormValues) =>
       registerRequest(values.username, values.email, values.password),
     onSuccess: async (data) => {
-      await setSession(data);
+      await setSession(toStoredSession(data));
       useToastStore.getState().show(`Account created. Welcome, ${data.username}.`);
       navigation.navigate('Account');
     },
