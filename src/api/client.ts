@@ -2,6 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { API_BASE_URL } from '@/config/env';
 import { getAuthSession, useAuthStore } from '@/store/authStore';
 import { getJwtExpiryMillis } from '@/lib/jwt';
+import { toStoredSession } from '@/lib/secureStorage';
 import type { AuthResponse } from '@/types/api';
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
@@ -17,7 +18,8 @@ async function refreshAccessToken(): Promise<string | null> {
         refreshToken: session.refreshToken,
       })
       .then(async (res) => {
-        await useAuthStore.getState().setSession(res.data);
+        // The server re-reads the role on refresh: a demoted admin drops to USER here.
+        await useAuthStore.getState().setSession(toStoredSession(res.data));
         return res.data.token;
       })
       .catch(async () => {
@@ -47,7 +49,9 @@ apiClient.interceptors.response.use(
           _retried?: boolean;
         })
       | undefined;
-    if (error.response?.status === 401 && original && !original._retried) {
+    // A 401 from sign-in itself (wrong password, MFA_REQUIRED, bad code) is an answer, not an expired token.
+    const isSignInCall = /^\/?auth\/(login|register|refresh|mfa\/)/.test(original?.url ?? '');
+    if (error.response?.status === 401 && original && !original._retried && !isSignInCall) {
       original._retried = true;
       const newToken = await refreshAccessToken();
       if (newToken) {

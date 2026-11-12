@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import { ScrollView, View, StyleSheet } from 'react-native';
-import { Button, Card, IconButton, List, Text, TextInput } from 'react-native-paper';
+import { Button, Card, IconButton, List, Text } from 'react-native-paper';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { clearCache, getAdminStats, getDatasetHealth, triggerImport } from './api';
-import { useAdminKeyStore } from './store';
+import { forgetLegacyAdminKey } from './store';
+import { useAuthStore } from '@/store/authStore';
 import { StatCard } from '@/components/StatCard';
 import type { DatasetHealthResponse } from '@/types/api';
 const HEALTH_CHECKS: {
@@ -28,48 +29,46 @@ const HEALTH_CHECKS: {
   { key: 'invalidRouteCount', samplesKey: 'invalidRouteSamples', label: 'Invalid routes' },
 ];
 export default function AdminScreen() {
-  const { key, hydrated, hydrate, setKey, clearKey } = useAdminKeyStore();
-  const [input, setInput] = useState('');
+  const session = useAuthStore((s) => s.session);
+  const isAdmin = session?.role === 'ADMIN';
   const [confirmingImport, setConfirmingImport] = useState(false);
   const queryClient = useQueryClient();
   useEffect(() => {
-    if (!hydrated) hydrate();
-  }, [hydrated, hydrate]);
+    forgetLegacyAdminKey().catch(() => {});
+  }, []);
   const statsQuery = useQuery({
-    queryKey: ['admin', 'stats', key],
-    queryFn: () => getAdminStats(key!),
-    enabled: !!key,
+    queryKey: ['admin', 'stats', session?.username],
+    queryFn: () => getAdminStats(),
+    enabled: isAdmin,
   });
   const healthQuery = useQuery({
-    queryKey: ['admin', 'health', key],
-    queryFn: () => getDatasetHealth(key!),
-    enabled: !!key,
+    queryKey: ['admin', 'health', session?.username],
+    queryFn: () => getDatasetHealth(),
+    enabled: isAdmin,
   });
   const clearCacheMutation = useMutation({
-    mutationFn: () => clearCache(key!),
+    mutationFn: () => clearCache(),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
   });
   const importMutation = useMutation({
-    mutationFn: () => triggerImport(key!),
+    mutationFn: () => triggerImport(),
     onSuccess: (result) => {
       setConfirmingImport(false);
       if (result.success) queryClient.invalidateQueries({ queryKey: ['admin'] });
     },
     onError: () => setConfirmingImport(false),
   });
-  if (!key) {
+  if (!isAdmin) {
     return (
       <View style={styles.container}>
-        <TextInput
-          label="Admin key"
-          value={input}
-          onChangeText={setInput}
-          secureTextEntry
-          style={styles.input}
-        />
-        <Button mode="contained" onPress={() => setKey(input)}>
-          Unlock admin portal
-        </Button>
+        <Text variant="titleMedium" style={styles.input}>
+          Admin access
+        </Text>
+        <Text>
+          {session
+            ? 'This account has no admin session. If you were just made an admin, sign out and sign in again with your one-time code.'
+            : 'Sign in with an admin account from the Account tab. You will need your password and a code from your authenticator app.'}
+        </Text>
       </View>
     );
   }
@@ -77,13 +76,10 @@ export default function AdminScreen() {
     <ScrollView style={styles.container}>
       <View style={styles.headerRow}>
         <Text variant="titleLarge">Admin Portal</Text>
-        <Button icon="logout" compact onPress={() => clearKey()}>
-          Forget key
-        </Button>
       </View>
 
       {statsQuery.error && (
-        <Text style={styles.errorText}>Could not load admin stats. Check the admin key.</Text>
+        <Text style={styles.errorText}>Could not load admin stats. If this keeps happening, sign out and sign in again.</Text>
       )}
 
       {statsQuery.data && (
@@ -103,7 +99,7 @@ export default function AdminScreen() {
             <IconButton
               {...props}
               icon="refresh"
-              onPress={() => queryClient.invalidateQueries({ queryKey: ['admin', 'stats', key] })}
+              onPress={() => queryClient.invalidateQueries({ queryKey: ['admin', 'stats'] })}
             />
           )}
         />
