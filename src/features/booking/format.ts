@@ -80,6 +80,29 @@ export interface PassengerRow {
   name: string;
   age: string;
   gender: 'M' | 'F' | 'T' | '';
+  /** Phase 6: berth or seat type wanted ('' = any). */
+  pref?: string;
+}
+
+export const BERTH_NAMES: Record<string, string> = {
+  LB: 'Lower',
+  MB: 'Middle',
+  UB: 'Upper',
+  SL: 'Side lower',
+  SU: 'Side upper',
+  WS: 'Window',
+  MS: 'Middle',
+  AS: 'Aisle',
+};
+
+/** Same choices as the website: seats for chair cars, berths for sleepers. */
+export function preferenceOptions(cls: TravelClass): string[] {
+  if (cls === 'EC') return ['WS', 'AS'];
+  if (cls === 'CC' || cls === '2S') return ['WS', 'MS', 'AS'];
+  if (cls === '1A') return ['LB', 'UB'];
+  // No side lower: RailOps keeps those for RAC passengers, so asking for one could never be met.
+  if (cls === '2A') return ['LB', 'UB', 'SU'];
+  return ['LB', 'MB', 'UB', 'SU'];
 }
 
 /** Same rules as RailOps, so the person hears about a problem before the request. */

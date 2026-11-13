@@ -122,3 +122,23 @@ export interface CancellationView {
   totalCharge: number;
   refundAmount: number;
 }
+
+/** Phase 6: live seat map, from RailOps' own bookings. Never says who booked. */
+export type BerthState = 'FREE' | 'RAC_HALF' | 'TAKEN';
+export interface SeatMapBerth {
+  no: number;
+  type: string;
+  state: BerthState;
+}
+export interface SeatMapCoach {
+  label: string;
+  free: number;
+  berths: SeatMapBerth[];
+}
+export interface SeatMap {
+  runId: number;
+  classCode: TravelClass;
+  fromSeq: number;
+  toSeq: number;
+  coaches: SeatMapCoach[];
+}

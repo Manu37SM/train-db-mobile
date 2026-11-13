@@ -115,6 +115,9 @@ With `BOOKING_ENABLED = true` **and** `LOGIN_PROVIDER = 'railops'`, the app sell
 - **Book:** up to 6 passengers and a mobile number, then "Hold seats for 10 minutes" (one idempotency key per attempt).
 - **Booking:** PNR, fare, hold timer, **Pay (simulated)** (no money moves) then it waits for *Booked*; cancel with a
   refund preview. **Account → My bookings** lists them.
+- **Phase 6:** a live seat map and a berth/seat preference per passenger on the Book screen; with
+  `RAILOPS_PAYMENTS = 'razorpay'` (in `src/config/login.ts`) Pay opens Razorpay's test-mode page in the browser
+  (only `https://rzp.io` links), and the booking is checked again when you come back to the app.
 - Bookings, the signed-in profile and admin data are no longer written to the offline query cache (plain storage);
   public train data still is. A failed token refresh signs the person out only when the server refused it, not on a
   timeout or a sleeping server.

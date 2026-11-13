@@ -17,7 +17,10 @@ export const RAILOPS_BASE_URL = 'https://railops-gateway.onrender.com';
  */
 export const BOOKING_ENABLED = false as boolean;
 /**
- * Only for a real payment gateway later: https hosts its checkout may be on. Empty for the demo, which uses
- * RailOps' simulated payment and never opens a checkout page.
+ * How RailOps takes payment (Phase 6), matching its PAYMENT_GATEWAY: 'simulated' (a button that pretends) or
+ * 'razorpay' (Razorpay TEST MODE: the app opens Razorpay's page in the browser; come back to the app afterwards).
  */
-export const RAILOPS_PAYMENT_HOSTS: readonly string[] = [];
+export type PaymentMode = 'simulated' | 'razorpay';
+export const RAILOPS_PAYMENTS = 'simulated' as PaymentMode;
+/** https hosts the checkout page may be on: Razorpay's payment-link host. Never anything else. */
+export const RAILOPS_PAYMENT_HOSTS: readonly string[] = ['rzp.io'];

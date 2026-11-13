@@ -1,4 +1,13 @@
-import { BOOKING_ENABLED, LOGIN_PROVIDER, RAILOPS_PAYMENT_HOSTS } from '@/config/login';
+import {
+  BOOKING_ENABLED,
+  LOGIN_PROVIDER,
+  RAILOPS_PAYMENT_HOSTS,
+  RAILOPS_PAYMENTS,
+} from '@/config/login';
+
+export function paymentMode() {
+  return RAILOPS_PAYMENTS;
+}
 
 /** Booking talks to RailOps with the person's RailOps token, so it needs the RailOps login (Phase 4D) as well. */
 export function bookingEnabled(): boolean {

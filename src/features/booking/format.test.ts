@@ -1,7 +1,8 @@
 jest.mock('@/config/login', () => ({
   BOOKING_ENABLED: true,
   LOGIN_PROVIDER: 'railops',
-  RAILOPS_PAYMENT_HOSTS: [],
+  RAILOPS_PAYMENT_HOSTS: ['rzp.io'],
+  RAILOPS_PAYMENTS: 'razorpay',
 }));
 import {
   availabilityLabel,
@@ -54,7 +55,8 @@ describe('booking helpers (app)', () => {
     expect(isAllowedCheckoutUrl('http://checkout.razorpay.com/x', hosts)).toBe(false);
     expect(isAllowedCheckoutUrl('https://checkout.razorpay.com.evil.in/x', hosts)).toBe(false);
     expect(isAllowedCheckoutUrl('https://u:p@checkout.razorpay.com/x', hosts)).toBe(false);
-    expect(isAllowedCheckoutUrl('https://pay.example/x')).toBe(false); // demo: no hosts at all
+    expect(isAllowedCheckoutUrl('https://rzp.io/i/AbC')).toBe(true); // the app's default: Razorpay links only
+    expect(isAllowedCheckoutUrl('https://pay.example/x')).toBe(false);
   });
 
   it('idempotency keys fit RailOps’ rule and differ every time', () => {

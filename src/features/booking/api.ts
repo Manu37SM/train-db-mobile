@@ -10,6 +10,8 @@ import type {
   PaymentIntent,
   RunAvailability,
   RunSummary,
+  SeatMap,
+  TravelClass,
 } from './types';
 
 /**
@@ -97,6 +99,18 @@ export const findRun = (trainNo: string, date: string) =>
   );
 export const getRun = (runId: number) =>
   call<RunSummary>('get', `/api/v1/runs/${runId}`, { auth: false });
+/** Phase 6: public live seat map. */
+export const getSeatMap = (
+  runId: number,
+  travelClass: TravelClass,
+  fromSeq: number,
+  toSeq: number,
+) =>
+  call<SeatMap>(
+    'get',
+    `/api/v1/runs/${runId}/seat-map?class=${encodeURIComponent(travelClass)}&from=${fromSeq}&to=${toSeq}`,
+    { auth: false },
+  );
 export const getAvailability = (runId: number, fromSeq: number, toSeq: number) =>
   call<RunAvailability>('get', `/api/v1/runs/${runId}/availability?from=${fromSeq}&to=${toSeq}`, {
     auth: false,

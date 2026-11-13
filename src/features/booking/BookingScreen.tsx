@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { Linking, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState, Linking, ScrollView, StyleSheet, View } from 'react-native';
 import { Button, Card, DataTable, HelperText, Text } from 'react-native-paper';
 import { useQuery } from '@tanstack/react-query';
 import {
@@ -10,7 +10,7 @@ import {
   paymentIntent,
   paySimulated,
 } from './api';
-import { isAllowedCheckoutUrl, newIdempotencyKey } from './config';
+import { isAllowedCheckoutUrl, newIdempotencyKey, paymentMode } from './config';
 import { CLASS_NAMES, formatInr, formatIst, STATUS_LABELS } from './format';
 import { getTrainDetails } from '@/features/trains/api';
 import { getApiErrorCode, getApiErrorMessage } from '@/lib/apiError';
@@ -74,6 +74,19 @@ export default function BookingScreen({ route }: { route: { params: { pnr: strin
   const nameOf = (code: string) =>
     names.data?.route.find((s) => s.stationCode === code)?.stationName ?? code;
 
+  // Razorpay mode: payment happens in the browser. When the person comes back to the app, check the booking.
+  const sentToGateway = useRef(false);
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (state) => {
+      if (state === 'active' && sentToGateway.current) {
+        sentToGateway.current = false;
+        void waitForStatusChange();
+      }
+    });
+    return () => sub.remove();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const secondsLeft = useSecondsLeft(
     booking?.status === 'PENDING_PAYMENT' ? booking.holdExpiresAt : null,
   );
@@ -97,6 +110,10 @@ export default function BookingScreen({ route }: { route: { params: { pnr: strin
     setError(null);
     setBusy(true);
     try {
+      if (paymentMode() === 'razorpay') {
+        await payAtGateway();
+        return;
+      }
       await paySimulated(pnr, outcome);
       await waitForStatusChange();
     } catch (e) {
@@ -119,6 +136,7 @@ export default function BookingScreen({ route }: { route: { params: { pnr: strin
       );
       return;
     }
+    sentToGateway.current = true;
     await Linking.openURL(intent.checkoutUrl);
   }
 
@@ -218,8 +236,10 @@ export default function BookingScreen({ route }: { route: { params: { pnr: strin
           <Card.Content>
             <Text>
               Seats held for {Math.floor((secondsLeft ?? 0) / 60)}:
-              {String((secondsLeft ?? 0) % 60).padStart(2, '0')}. This is a demo: the payment is
-              simulated and no money moves.
+              {String((secondsLeft ?? 0) % 60).padStart(2, '0')}.{' '}
+              {paymentMode() === 'razorpay'
+                ? 'You’ll pay on Razorpay’s page in test mode (test card or UPI ID, no real money), then come back here.'
+                : 'This is a demo: the payment is simulated and no money moves.'}
             </Text>
             <Button
               mode="contained"
@@ -229,11 +249,17 @@ export default function BookingScreen({ route }: { route: { params: { pnr: strin
               disabled={busy || waiting}
               onPress={() => pay('SUCCESS')}
             >
-              {waiting ? 'Confirming…' : `Pay ${formatInr(booking.totalFare)} (simulated)`}
+              {waiting
+                ? 'Confirming…'
+                : paymentMode() === 'razorpay'
+                  ? `Pay ${formatInr(booking.totalFare)} on Razorpay (test)`
+                  : `Pay ${formatInr(booking.totalFare)} (simulated)`}
             </Button>
-            <Button disabled={busy || waiting} onPress={() => pay('FAILURE')}>
-              Try a failed payment
-            </Button>
+            {paymentMode() === 'simulated' && (
+              <Button disabled={busy || waiting} onPress={() => pay('FAILURE')}>
+                Try a failed payment
+              </Button>
+            )}
           </Card.Content>
         </Card>
       )}

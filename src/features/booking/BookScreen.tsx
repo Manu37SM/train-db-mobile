@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, View } from 'react-native';
 import {
   Button,
   Checkbox,
+  Chip,
   HelperText,
   IconButton,
   SegmentedButtons,
@@ -15,12 +16,15 @@ import { createBooking, getRun } from './api';
 import { newIdempotencyKey } from './config';
 import {
   CLASS_NAMES,
+  BERTH_NAMES,
   formatIst,
+  preferenceOptions,
   MAX_PASSENGERS,
   PassengerRow,
   PHONE_PATTERN,
   validatePassengers,
 } from './format';
+import SeatMapView from './SeatMapView';
 import { getApiErrorMessage } from '@/lib/apiError';
 import { AuthFailure } from '@/lib/apiError';
 import { useAuthStore } from '@/store/authStore';
@@ -28,7 +32,7 @@ import { BRAND } from '@/theme/theme';
 import type { TrainsStackParamList } from '@/navigation/types';
 
 type Props = NativeStackScreenProps<TrainsStackParamList, 'Book'>;
-const EMPTY: PassengerRow = { name: '', age: '', gender: '' };
+const EMPTY: PassengerRow = { name: '', age: '', gender: '', pref: '' };
 
 export default function BookScreen({ route, navigation }: Props) {
   const { runId, fromSeq, toSeq, travelClass } = route.params;
@@ -74,6 +78,7 @@ export default function BookScreen({ route, navigation }: Props) {
             name: p.name.trim(),
             age: Number(p.age),
             gender: p.gender as 'M' | 'F' | 'T',
+            berthPreference: p.pref || null,
           })),
           onlyIfConfirmed,
           contactPhone: phone.trim(),
@@ -108,6 +113,8 @@ export default function BookScreen({ route, navigation }: Props) {
       <Text style={styles.sub}>
         {CLASS_NAMES[travelClass]} ({travelClass}), general quota
       </Text>
+
+      <SeatMapView runId={runId} travelClass={travelClass} fromSeq={fromSeq} toSeq={toSeq} />
 
       <Text variant="titleMedium" style={styles.section}>
         Passengers
@@ -147,6 +154,22 @@ export default function BookScreen({ route, navigation }: Props) {
               { value: 'T', label: 'Trans' },
             ]}
           />
+          <View style={styles.prefs}>
+            <Text variant="labelMedium" style={styles.prefLabel}>
+              Preference
+            </Text>
+            {['', ...preferenceOptions(travelClass)].map((t) => (
+              <Chip
+                key={t || 'any'}
+                compact
+                selected={(p.pref ?? '') === t}
+                onPress={() => update(i, { pref: t })}
+                style={styles.prefChip}
+              >
+                {t ? BERTH_NAMES[t] : 'Any'}
+              </Chip>
+            ))}
+          </View>
         </View>
       ))}
       {passengers.length < MAX_PASSENGERS && (
@@ -208,5 +231,8 @@ const styles = StyleSheet.create({
   passenger: { marginBottom: 16 },
   passengerHead: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   input: { marginBottom: 8 },
+  prefs: { flexDirection: 'row', flexWrap: 'wrap', alignItems: 'center', marginTop: 8, gap: 4 },
+  prefLabel: { marginRight: 4 },
+  prefChip: { marginBottom: 4 },
   button: { marginTop: 16, marginBottom: 8 },
 });
