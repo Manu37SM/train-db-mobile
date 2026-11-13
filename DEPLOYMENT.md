@@ -65,6 +65,7 @@ Update this table whenever you merge or deploy. (I'll update it at the end of ev
 **To do later (noted 13 Nov 2026):**
 - RailLens backend: move the memory settings from `JAVA_TOOL_OPTIONS` into the `Dockerfile`; load the timetable snapshot (`ScheduleSnapshotService`) with one joined query instead of per-train/per-station lookups; build it at startup so the first visitor after a wake-up doesn't wait about 40 s for stats, rankings or the network map.
 - RailLens backend runs in Render **Oregon** but its database is in Neon **Sydney**: every query crosses the Pacific. Recreating the backend in Singapore (and moving the database to Singapore) would speed up everything.
+- RailOps: move to Spring Boot 4 (Spring Framework 7) before **28 Feb 2027**. Boot 3.5 / Framework 6.2 no longer get open-source security fixes; three Spring CVEs that don't affect RailOps are accepted in `railops/.trivyignore` until then, and the version overrides in `railops/pom.xml` (Jackson, Netty, Tomcat, snappy, lz4, BouncyCastle) can go when Boot 4 lands.
 
 ---
 
@@ -405,6 +406,7 @@ Only when **all** of these are true: the Phase 2A website is live, every admin h
 
 | Date | What changed |
 |---|---|
+| 13 Nov 2026 | RailOps CI security scan: patched Jackson, Netty, Tomcat, snappy-java, lz4-java, BouncyCastle; staff web image on nginx 1.30 with Alpine updates applied at build; `.trivyignore` for three non-applicable Spring CVEs (expires 28 Feb 2027); Boot 4 move added to the to-do list. No new settings. |
 | 12 Nov 2026 | First version: covers Phases 0, 1 and 2A, holding merges back from going live, the database check, and the Phase 2A admin setup. |
 | 12 Nov 2026 | Phase 2B: two matching proxy secrets (Render + Vercel), merge order 2A → 2B, cookie checks in the smoke test, three new troubleshooting rows. |
 | 12 Nov 2026 | Phase 3A: RailOps web restyle in the tracker (no new settings); note to put `railops` under git before merging. |
