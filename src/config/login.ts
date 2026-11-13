@@ -24,3 +24,15 @@ export type PaymentMode = 'simulated' | 'razorpay';
 export const RAILOPS_PAYMENTS = 'simulated' as PaymentMode;
 /** https hosts the checkout page may be on: Razorpay's payment-link host. Never anything else. */
 export const RAILOPS_PAYMENT_HOSTS: readonly string[] = ['rzp.io'];
+
+/**
+ * RailOps services to wake when the app starts (Render's free plan: they sleep after 15 idle minutes and can't wake
+ * each other; a request from the phone does). Only used when LOGIN_PROVIDER is 'railops' or BOOKING_ENABLED.
+ */
+export const RAILOPS_WAKE_URLS: readonly string[] = [
+  RAILOPS_BASE_URL,
+  'https://railops-identity.onrender.com',
+  'https://railops-reservation.onrender.com',
+  'https://railops-payment.onrender.com',
+  'https://railops-notification.onrender.com',
+];
