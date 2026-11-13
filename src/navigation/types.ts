@@ -6,6 +6,15 @@ export type TrainsStackParamList = {
   TrainDetails: {
     trainNumber: string;
   };
+  /** Phase 5B */
+  Book: {
+    runId: number;
+    trainNo: string;
+    fromSeq: number;
+    toSeq: number;
+    travelClass: import('@/features/booking/types').TravelClass;
+  };
+  Booking: { pnr: string };
 };
 export type StationsStackParamList = {
   StationSearch: undefined;
@@ -39,6 +48,9 @@ export type AccountStackParamList = {
   Developers: undefined;
   Login: undefined;
   Register: undefined;
+  /** Phase 5B */
+  Bookings: undefined;
+  Booking: { pnr: string };
 };
 export type HomeStackParamList = {
   Home: undefined;

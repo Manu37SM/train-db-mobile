@@ -11,6 +11,9 @@ import { toStoredSession } from '@/lib/secureStorage';
 import { useAuthStore } from '@/store/authStore';
 import { useToastStore } from '@/store/toastStore';
 import { BRAND } from '@/theme/theme';
+import { LOGIN_PROVIDER } from '@/config/login';
+/** RailOps login (Phase 4D): email only; staff send their code with the password, there is no second step. */
+const RAILOPS = LOGIN_PROVIDER === 'railops';
 import type { AuthNavigation } from '@/navigation/types';
 import type { AuthResponse, MfaEnrolmentResponse } from '@/types/api';
 interface Props {
@@ -32,6 +35,8 @@ export default function LoginScreen({ navigation }: Props) {
   const [step, setStep] = useState<Step>('password');
   const [otp, setOtp] = useState('');
   const [enrolment, setEnrolment] = useState<Enrolment | null>(null);
+  const [staffCode, setStaffCode] = useState(false);
+  const sendOtp = step === 'otp' || (RAILOPS && staffCode);
   const {
     control,
     handleSubmit,
@@ -55,7 +60,7 @@ export default function LoginScreen({ navigation }: Props) {
         return confirmMfaEnrolment(enrolment.enrolmentToken, otp);
       }
       const { usernameOrEmail, password } = getValues();
-      const data = await login(usernameOrEmail, password, step === 'otp' ? otp : undefined);
+      const data = await login(usernameOrEmail, password, sendOtp ? otp : undefined);
       if (data.mfaEnrolmentRequired && data.enrolmentToken) {
         const started = await startMfaEnrolment(data.enrolmentToken);
         setEnrolment({ ...started, enrolmentToken: data.enrolmentToken });
@@ -79,13 +84,19 @@ export default function LoginScreen({ navigation }: Props) {
       } else if (code === 'INVALID_ENROLMENT_TOKEN') {
         restart('Setup took too long. Sign in again to continue.');
       } else {
-        setServerError(getApiErrorMessage(error, 'Invalid username/email or password.'));
+        setServerError(
+          getApiErrorMessage(error, RAILOPS ? 'Invalid email or password.' : 'Invalid username/email or password.'),
+        );
       }
     },
   });
   function submit() {
     setServerError(null);
     if (step === 'password') {
+      if (sendOtp && !OTP_PATTERN.test(otp)) {
+        setServerError('Enter the 6-digit code from your authenticator app.');
+        return;
+      }
       handleSubmit(() => mutation.mutate())();
       return;
     }
@@ -121,7 +132,7 @@ export default function LoginScreen({ navigation }: Props) {
             name="usernameOrEmail"
             render={({ field }) => (
               <TextInput
-                label="Username or email"
+                label={RAILOPS ? 'Email' : 'Username or email'}
                 autoCapitalize="none"
                 autoCorrect={false}
                 keyboardType="email-address"
@@ -158,6 +169,19 @@ export default function LoginScreen({ navigation }: Props) {
             {errors.password?.message}
           </HelperText>
         </>
+      )}
+
+      {RAILOPS && step === 'password' && staffCode && otpInput}
+
+      {RAILOPS && step === 'password' && (
+        <Button
+          onPress={() => {
+            setStaffCode((on) => !on);
+            setOtp('');
+          }}
+        >
+          {staffCode ? "I don't use a one-time code" : 'Staff? Add your one-time code'}
+        </Button>
       )}
 
       {step === 'otp' && (

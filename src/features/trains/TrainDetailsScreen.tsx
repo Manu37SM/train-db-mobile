@@ -22,6 +22,7 @@ import { toCsv } from '@/lib/csvExport';
 import ExportButton from '@/components/ExportButton';
 import ShareButton from '@/components/ShareButton';
 import type { RouteStopResponse } from '@/types/api';
+import BookTrainCard from '@/features/booking/BookTrainCard';
 import type { TrainsStackParamList } from '@/navigation/types';
 type Props = NativeStackScreenProps<TrainsStackParamList, 'TrainDetails'>;
 function formatDuration(minutes: number | null): string {
@@ -123,6 +124,15 @@ export default function TrainDetailsScreen({ route }: Props) {
         <Chip compact>{train.totalStops} stops</Chip>
         <Chip compact>{train.averageSpeed ?? '—'} km/h avg</Chip>
       </View>
+
+      <BookTrainCard
+        trainNumber={train.trainNumber}
+        route={train.route}
+        boardStop={boardStop}
+        deboardStop={deboardStop}
+        onBook={(params) => navigation.navigate('Book', params)}
+        onSignIn={() => navigation.navigate('AccountTab', { screen: 'Login' })}
+      />
 
       {intelligenceQuery.data && (
         <Card style={styles.card}>

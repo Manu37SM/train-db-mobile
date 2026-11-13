@@ -1,5 +1,7 @@
 # RailLens Mobile
 
+> **Going live?** Follow [`DEPLOYMENT.md`](DEPLOYMENT.md): one step-by-step guide for the backend, website, Android app and RailOps, with a tracker of what's merged vs. live.
+
 React Native (CLI, bare, TypeScript) client for RailLens. Not a companion app —
 every feature in train-db-frontend has a home here too, reusing the same
 train-db REST API. See ../MOBILE_FEATURE_PARITY.md for the full checklist and
@@ -76,21 +78,7 @@ fully aligned — not required to run).
 
 ## Deploying the backend (do this first)
 
-The app defaults to a **live backend URL**, not localhost — a real phone is
-a separate device from your dev machine and can't reach `localhost`/
-`10.0.2.2` at all. `train-db/Dockerfile` and `train-db/render.yaml` are
-already prepared for a one-click Render deploy:
-
-1. Push this repo to GitHub/GitLab if it isn't already (Render deploys from a repo).
-2. In the [Render dashboard](https://dashboard.render.com), New → Blueprint → pick this repo → Render reads `train-db/render.yaml` automatically.
-3. When prompted for `RAILLENS_CORS_ALLOWED_ORIGINS` (a `sync: false` var Render will ask for at apply-time), enter your web frontend's URL if it's deployed, or `http://localhost:3000` as a placeholder if not — CORS only affects browser requests; it doesn't affect the mobile app at all, so this doesn't block mobile.
-4. Click Apply. Render provisions the Postgres DB + web service and gives you a URL like `https://raillens-train-db.onrender.com`.
-5. Once it's up, hit `https://<your-url>/actuator/health` in a browser — should return `{"status":"UP"}`.
-6. Update `src/config/env.ts`'s `LIVE_BASE_URL` constant to `https://<your-url>/api/v1`.
-
-Note: Render's free plan spins down after inactivity — the first request
-after idling can take ~30-60s to wake up. That's a Render behavior, not a
-mobile app bug, if a first launch feels slow.
+The app talks to the live backend (`src/config/env.ts`), so the backend must be deployed before the app is useful on a real phone. The full, current steps (Render + Neon) are in [`DEPLOYMENT.md`](DEPLOYMENT.md), Sections 6 and 8. Render's free plan sleeps when idle, so the first request after a while can take up to a minute.
 
 ## Configuration
 
@@ -100,6 +88,39 @@ want an emulator talking to a `train-db` running on your own machine
 instead of the live deployment (Android emulator reaches the host via
 `10.0.2.2`). `.env.example` documents the same values for when
 react-native-config gets wired up later (deliberately deferred for now).
+
+### Single login (Phase 4D): `src/config/login.ts`
+
+`LOGIN_PROVIDER` chooses who handles sign-in. It is built into the APK, so changing it means building a new one.
+
+- `'raillens'` (default): RailLens' own accounts, exactly as before.
+- `'railops'`: the RailOps login shared with the website. `src/features/auth/railops.ts` signs in at RailOps
+  (`RAILOPS_BASE_URL`, the gateway; app endpoints that return the refresh token in the body), then asks the RailLens
+  backend's `/auth/me` for the profile and admin role. Tokens stay in the Keychain as before.
+  - Sign in with **email**. Registration asks for a **phone number** instead of a username; passwords need **10+
+    characters**. Staff admins tap "Staff? Add your one-time code" and send it with the password; MFA setup happens
+    in the RailOps staff app.
+  - Change password and delete account are unchanged: RailLens forwards them to RailOps for linked accounts.
+  - Each saved session remembers which login issued it. After an update that switches login, the old tokens are
+    dropped (never sent to the other service) and the person signs in once more.
+
+Switch it only after the website has switched (`DEPLOYMENT.md` Section 9b). Rollback: set `'raillens'`, build a new APK.
+
+### Booking (Phase 5B): `BOOKING_ENABLED` in `src/config/login.ts`
+
+With `BOOKING_ENABLED = true` **and** `LOGIN_PROVIDER = 'railops'`, the app sells RailOps tickets (same API as the website):
+
+- **Train screen → Book this train:** date chips for the next 14 days; stations default to the whole route, or the
+  stops picked with "Select stops". RailLens station codes are matched to RailOps stop numbers. Seats per class.
+- **Book:** up to 6 passengers and a mobile number, then "Hold seats for 10 minutes" (one idempotency key per attempt).
+- **Booking:** PNR, fare, hold timer, **Pay (simulated)** (no money moves) then it waits for *Booked*; cancel with a
+  refund preview. **Account → My bookings** lists them.
+- **Phase 6:** a live seat map and a berth/seat preference per passenger on the Book screen; with
+  `RAILOPS_PAYMENTS = 'razorpay'` (in `src/config/login.ts`) Pay opens Razorpay's test-mode page in the browser
+  (only `https://rzp.io` links), and the booking is checked again when you come back to the app.
+- Bookings, the signed-in profile and admin data are no longer written to the offline query cache (plain storage);
+  public train data still is. A failed token refresh signs the person out only when the server refused it, not on a
+  timeout or a sleeping server.
 
 ## Running on your own phone (Android)
 
@@ -179,6 +200,6 @@ missing). Every other file in `src/` was re-checked against backend source
 or its web equivalent and found correct - see `MOBILE_AUDIT.md` for the
 full "reviewed, no issue" list.
 
-## Backend is not deployed yet
+## Release status
 
-`src/config/env.ts`'s `LIVE_BASE_URL` is a placeholder until the "Deploying the backend" section above is completed.
+See the release tracker in [`DEPLOYMENT.md`](DEPLOYMENT.md), Section 2.

@@ -8,4 +8,4 @@ export const API_BASE_URL = USE_LOCAL_BACKEND
     ? DEV_ANDROID_EMULATOR_BASE_URL
     : DEV_IOS_SIMULATOR_BASE_URL
   : LIVE_BASE_URL;
-export const WEB_BASE_URL = 'https://raillens.vercel.app';
+export const WEB_BASE_URL = 'https://rail-lens-frontend.vercel.app';
