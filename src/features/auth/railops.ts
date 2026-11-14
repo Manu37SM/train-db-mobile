@@ -2,6 +2,7 @@ import axios, { isAxiosError } from 'axios';
 import { API_BASE_URL } from '@/config/env';
 import { RAILOPS_BASE_URL } from '@/config/login';
 import { AuthFailure } from '@/lib/apiError';
+import { watchBackend } from '@/features/backendStatus/monitor';
 import type { AuthResponse, CurrentUserResponse } from '@/types/api';
 
 /**
@@ -14,6 +15,10 @@ import type { AuthResponse, CurrentUserResponse } from '@/types/api';
  * them to RailOps for linked profiles.
  */
 const railOps = axios.create({ baseURL: RAILOPS_BASE_URL, timeout: 30000 });
+watchBackend(railOps, 'railops');
+/** RailLens' /auth/me after a RailOps sign-in; watched so a sleeping RailLens shows the banner too. */
+const raillens = axios.create({ timeout: 30000 });
+watchBackend(raillens, 'raillens');
 
 interface AppSession {
   accessToken: string;
@@ -66,9 +71,8 @@ export function toAuthFailure(error: unknown): AuthFailure {
 
 async function profile(accessToken: string): Promise<CurrentUserResponse> {
   try {
-    const { data } = await axios.get<CurrentUserResponse>(`${API_BASE_URL}/auth/me`, {
+    const { data } = await raillens.get<CurrentUserResponse>(`${API_BASE_URL}/auth/me`, {
       headers: { Authorization: `Bearer ${accessToken}` },
-      timeout: 30000,
     });
     return data;
   } catch (error) {

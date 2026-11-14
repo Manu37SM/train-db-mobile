@@ -7,10 +7,13 @@ import { getJwtExpiryMillis } from '@/lib/jwt';
 import { toStoredSession } from '@/lib/secureStorage';
 import { AuthFailure } from '@/lib/apiError';
 import type { AuthResponse } from '@/types/api';
+import { watchBackend } from '@/features/backendStatus/monitor';
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   timeout: 15000,
 });
+// Unreachable or slow RailLens: the banner at the top of the app says it is waking up or down.
+watchBackend(apiClient, 'raillens');
 let refreshPromise: Promise<string | null> | null = null;
 /** The refresh token was refused (401/400/403), as opposed to the network or the server failing. */
 export function isSessionOver(error: unknown): boolean {

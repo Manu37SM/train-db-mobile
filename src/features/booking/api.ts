@@ -2,6 +2,7 @@ import axios, { isAxiosError } from 'axios';
 import { RAILOPS_BASE_URL } from '@/config/login';
 import { getValidAccessToken } from '@/api/client';
 import { AuthFailure } from '@/lib/apiError';
+import { watchBackend } from '@/features/backendStatus/monitor';
 import type {
   BookingPage,
   BookingView,
@@ -19,6 +20,7 @@ import type {
  * (the app's own token once sign-in goes through RailOps). Prices always come from RailOps: nothing sends an amount.
  */
 const railOps = axios.create({ baseURL: RAILOPS_BASE_URL, timeout: 65000 }); // free services take ~1 min to wake
+watchBackend(railOps, 'railops');
 
 /** Switch on RailOps' stable codes, never its detail text (worded for logs). */
 const MESSAGES: Record<string, string> = {

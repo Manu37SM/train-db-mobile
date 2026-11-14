@@ -11,8 +11,11 @@ jest.mock('axios', () => {
     ...actual,
     default: {
       ...actual.default,
-      create: () => ({ post: (...a: unknown[]) => mockPost(...a) }),
-      get: (...a: unknown[]) => mockGet(...a),
+      create: () => ({
+        post: (...a: unknown[]) => mockPost(...a),
+        get: (...a: unknown[]) => mockGet(...a),
+        interceptors: { request: { use: () => 0 }, response: { use: () => 0 } },
+      }),
     },
   };
 });

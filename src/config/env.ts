@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-const LIVE_BASE_URL = 'https://raillens-train-db.onrender.com/api/v1';
+const LIVE_BASE_URL = 'https://raillens-api.onrender.com/api/v1';
 const DEV_ANDROID_EMULATOR_BASE_URL = 'http://10.0.2.2:8080/api/v1';
 const DEV_IOS_SIMULATOR_BASE_URL = 'http://localhost:8080/api/v1';
 const USE_LOCAL_BACKEND = false;

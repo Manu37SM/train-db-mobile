@@ -7,7 +7,7 @@
  * Switch it only after the website has switched (DEPLOYMENT.md Section 9b). Rollback: set 'raillens', new APK.
  */
 export type LoginProvider = 'raillens' | 'railops';
-export const LOGIN_PROVIDER = 'raillens' as LoginProvider;
+export const LOGIN_PROVIDER = 'railops' as LoginProvider;
 /** The RailOps gateway. Only used when LOGIN_PROVIDER is 'railops'. */
 export const RAILOPS_BASE_URL = 'https://railops-gateway.onrender.com';
 
@@ -15,7 +15,7 @@ export const RAILOPS_BASE_URL = 'https://railops-gateway.onrender.com';
  * Booking (Phase 5B): book RailOps tickets in the app. Needs LOGIN_PROVIDER = 'railops' too, because RailOps only
  * accepts its own sign-in. Built into the APK. Turn on after the website's booking works (DEPLOYMENT.md Section 9c).
  */
-export const BOOKING_ENABLED = false as boolean;
+export const BOOKING_ENABLED = true as boolean;
 /**
  * How RailOps takes payment (Phase 6), matching its PAYMENT_GATEWAY: 'simulated' (a button that pretends) or
  * 'razorpay' (Razorpay TEST MODE: the app opens Razorpay's page in the browser; come back to the app afterwards).

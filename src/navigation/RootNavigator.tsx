@@ -8,10 +8,15 @@ import {
 import { useAuthStore } from '@/store/authStore';
 import { AssistantFab } from '@/features/assistant/AssistantFab';
 import GlobalToast from '@/components/GlobalToast';
+import { BackendStatusBanner } from '@/features/backendStatus/BackendStatusBanner';
+import { configureBackendStatus } from '@/features/backendStatus/monitor';
+import { API_BASE_URL } from '@/config/env';
 import { useResolvedTheme } from '@/theme/useResolvedTheme';
 import { lightTheme, darkTheme } from '@/theme/theme';
 import MainTabNavigator from './MainTabNavigator';
 import { navigationRef } from './navigationRef';
+configureBackendStatus(API_BASE_URL);
+
 export default function RootNavigator() {
   const { hydrated, hydrate } = useAuthStore();
   const resolvedScheme = useResolvedTheme();
@@ -41,6 +46,7 @@ export default function RootNavigator() {
         <MainTabNavigator />
       </NavigationContainer>
 
+      <BackendStatusBanner />
       <AssistantFab />
       <GlobalToast />
     </View>
